@@ -259,3 +259,22 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+*.PDF
+Application/cover_letter.doc
+Application/cover_letter.docx
+Application/Request for tender.docx
+Application/Request for tender.xlsx
+*.docx
+CB-LTBI.pbix
+Data/32220_table_a2.xls
+Data/32220_table_b2.xls
+Data/32220_table_c2.xls
+Data/32220ds01_2017-2066_summary_statistics.xls
+Data/3303_3 underlying causes of death (victoria).xls
+Data/3303_3 underlying causes of death (victoria).xlsx
+Data/Victoria Population 2006 Census.csv
+Data/Victoria Population 2011 Census.csv
+Data/Victoria Population 2016 Census.csv
+Dropbox Files.url
+Data/3417055001_2016_acmid_data_item_list.xls
+.Rhistory

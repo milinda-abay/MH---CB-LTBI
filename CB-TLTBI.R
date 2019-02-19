@@ -1,0 +1,278 @@
+# setwd("H:/Katie/PhD/LTBI project/LTBI-Aust/") change working directory as required
+setwd("M:/Documents/@Projects/MH - CB LTBI/")
+options(prompt = "R> ")
+
+# Load libraries.
+library(tidyverse)
+library(reshape2)
+library(zoo) # used for filling empty AGEP values
+library(data.table)
+library(readxl)
+library(heemod)
+library(diagram)
+library(ggplot2)
+
+
+# Data cleansing and shaping functions
+FixFertility <- function(hf, mf, lf) {
+
+    # Prepares the fertility data into a data.table.
+
+    # Args: 
+    #   hf: a data.table of high fertility rates.
+    #   mf: a data.table of medium fertility rates.
+    #   lf: a data.table of low fertility rates.
+    #
+    # Return:
+    #   a data.table with age, year, rate and fertility as columns.
+
+    names(hf) <- c("Age", 2017:2027)
+    names(mf) <- c("Age", 2017:2027)
+    names(lf) <- c("Age", 2017:2027)
+
+    hf.firstrow <- which(hf$"2017" == "Victoria") + 2
+    hf.lastrow <- which(hf$"2017" == "Queensland") - 4
+
+    mf.firstrow <- which(mf$"2017" == "Victoria") + 2
+    mf.lastrow <- which(mf$"2017" == "Queensland") - 4
+
+    lf.firstrow <- which(lf$"2017" == "Victoria") + 2
+    lf.lastrow <- which(lf$"2017" == "Queensland") - 4
+
+    hf <- hf[hf.firstrow:hf.lastrow,,]
+    mf <- mf[mf.firstrow:mf.lastrow,,]
+    lf <- lf[lf.firstrow:lf.lastrow,,]
+
+    hf$"2017" <- as.numeric(hf$"2017")
+    mf$"2017" <- as.numeric(mf$"2017")
+    lf$"2017" <- as.numeric(lf$"2017")
+
+    hf$Age <- as.integer(hf$Age)
+    mf$Age <- as.integer(mf$Age)
+    lf$Age <- as.integer(lf$Age)
+
+    hf <- melt(hf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+    mf <- melt(mf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+    lf <- melt(lf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+
+    hf$Year <- as.integer(hf$Year)
+    mf$Year <- as.integer(mf$Year)
+    lf$Year <- as.integer(lf$Year)
+
+    hf[, frate := .("High"),]
+    mf[, frate := .("Med"),]
+    lf[, frate := .("Low"),]
+
+
+
+    return(rbind(hf, mf, lf))
+
+}
+
+FixMortality <- function(hm, mm) {
+
+    # Prepares the mortality data into a table.
+
+    # Args: 
+    #   hm: a data.table of high mortality rates
+    #   mm: a data.table of medium mortality rates
+
+    # Return:
+    #   a data.table with age, year, proportion and mortality as dimensions.
+
+    hm <- hm[7:nrow(hm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+    mm <- mm[7:nrow(mm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+    names(hm) <- c("Year", "Age", "Male", "Female")
+    names(mm) <- c("Year", "Age", "Male", "Female")
+
+    hm$Age <- as.integer(hm$Age)
+    mm$Age <- as.integer(mm$Age)
+
+
+    hm <- melt(hm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+    mm <- melt(mm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+    hm$Year <- as.integer(hm$Year)
+    mm$Year <- as.integer(mm$Year)
+
+    hm$Rate <- as.numeric(hm$Rate)
+    mm$Rate <- as.numeric(mm$Rate)
+
+    hm[, mrate := .("High"),]
+    mm[, mrate := .("Med"),]
+
+
+    return(rbind(hm, mm))
+
+}
+
+FixMigration <- function(hma, hmd, mma, mmd, lma, lmd) {
+
+    # Prepares the migration data into an table.
+
+    # Args: 
+    #   hma: a data.table of high migration arrival rates
+    #   hmd: a data.table of high migration departure rates
+    #   mma: a data.table of medium migration arrival rates
+    #   mmd: a data.table of medium migration departure rates
+    #   lma: a data.table of high migration arrival rates
+    #   lmd: a data.table of high migration departure rates
+
+    # Return:
+    #   a data.table with age, year, proportion and mortality as dimensions.
+
+    hma <- vic.high.migration.arrivals
+    hmd <- vic.high.migration.departures
+    mma <- vic.medium.migration.arrivals
+    mmd <- vic.medium.migration.departures
+    lma <- vic.low.migration.arrivals
+    lmd <- vic.low.migration.departures
+
+    hma <- hma[8:nrow(hma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+    hmd <- hmd[8:nrow(hmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+    mma <- hma[8:nrow(mma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+    mmd <- mmd[8:nrow(mmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+    lma <- lma[8:nrow(lma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+    lmd <- lmd[8:nrow(lmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+    names(hma) <- c("Year", "Age", "Male", "Female")
+    names(hmd) <- c("Year", "Age", "Male", "Female")
+    names(mma) <- c("Year", "Age", "Male", "Female")
+    names(mmd) <- c("Year", "Age", "Male", "Female")
+    names(lma) <- c("Year", "Age", "Male", "Female")
+    names(lmd) <- c("Year", "Age", "Male", "Female")
+
+    hma$Age <- as.integer(hma$Age)
+    hmd$Age <- as.integer(hmd$Age)
+
+    mma$Age <- as.integer(mma$Age)
+    mmd$Age <- as.integer(mmd$Age)
+
+    lma$Age <- as.integer(lma$Age)
+    lmd$Age <- as.integer(lmd$Age)
+
+    hma <- melt(hma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+    hmd <- melt(hmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+    mma <- melt(mma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+    mmd <- melt(mmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+    lma <- melt(lma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+    lmd <- melt(lmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+    hma$Year <- as.integer(hma$Year)
+    hmd$Year <- as.integer(hmd$Year)
+
+    mma$Year <- as.integer(mma$Year)
+    mmd$Year <- as.integer(mmd$Year)
+
+    lma$Year <- as.integer(lma$Year)
+    lmd$Year <- as.integer(lmd$Year)
+
+    hma$Rate <- as.numeric(hma$Rate)
+    hmd$Rate <- as.numeric(hmd$Rate)
+    mma$Rate <- as.numeric(mma$Rate)
+    mmd$Rate <- as.numeric(mmd$Rate)
+    lma$Rate <- as.numeric(lma$Rate)
+    lmd$Rate <- as.numeric(lmd$Rate)
+
+    hma[, c("Flow", "mrate") := .("Arrival", "High"),]
+    hmd[, c("Flow", "mrate") := .("Departure", "High"),]
+
+    mma[, c("Flow", "mrate") := .("Arrival", "Medium"),]
+    mmd[, c("Flow", "mrate") := .("Departure", "Medium"),]
+
+    lma[, c("Flow", "mrate") := .("Arrival", "Low"),]
+    lmd[, c("Flow", "mrate") := .("Departure", "Low"),]
+
+    return(rbind(hma, hmd, mma, mmd, lma, lmd))
+
+}
+
+
+# Heemod setup located within this file.
+source("CB-TLTBI functions.R")
+
+
+# Main runtime.
+
+# Read the data files (if required)
+aust <- readRDS("Data/aust.rds")
+aust.LGA <- readRDS("Data/aust.LGA.rds")
+prob.Inf <- readRDS("Data/prob.Inf.rds")
+tbhaz.200rep <- readRDS("Data/tbhaz.200rep.rds")
+tbhaz.5000rep <- readRDS("Data/tbhaz.5000rep.rds")
+vic.fertility <- readRDS("Data/vic.fertility.rds")
+vic.mortality <- readRDS("Data/vic.mortality.rds")
+vic.migration <- readRDS("Data/vic.migration.rds")
+
+# Loading ABS population projections for Victoria 2017-2025
+vic.pop2017 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019113857503.csv", skip = 0, header = T, stringsAsFactors = F)
+vic.pop2018 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019114104680.csv", skip = 0, header = T, stringsAsFactors = F)
+vic.pop2019 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019114211913.csv", skip = 0, header = T, stringsAsFactors = F)
+vic.pop2020 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019114347166.csv", skip = 0, header = T, stringsAsFactors = F)
+vic.pop2021 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019114421604.csv", skip = 0, header = T, stringsAsFactors = F)
+vic.pop2022 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019114458184.csv", skip = 0, header = T, stringsAsFactors = F)
+vic.pop2023 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019114533489.csv", skip = 0, header = T, stringsAsFactors = F)
+vic.pop2024 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019114605011.csv", skip = 0, header = T, stringsAsFactors = F)
+vic.pop2025 <- fread("Data/POP_PROJ_REGION_2012_2061_11012019114642182.csv", skip = 0, header = T, stringsAsFactors = F)
+
+# Merge and consolidate population projections from 2017 to 2025
+vic.pop <- rbind(vic.pop2017, vic.pop2018, vic.pop2019, vic.pop2020, vic.pop2021, vic.pop2022, vic.pop2023, vic.pop2024, vic.pop2025)
+rm(vic.pop2017, vic.pop2018, vic.pop2019, vic.pop2020, vic.pop2021, vic.pop2022, vic.pop2023, vic.pop2024, vic.pop2025)
+
+# Read excel data files
+vic.high.fertility <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 2))
+vic.medium.fertility <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 3))
+vic.low.fertility <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 4))
+
+vic.high.mortality <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 5))
+vic.medium.mortality <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 6))
+
+vic.high.migration.arrivals <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 7))
+vic.high.migration.departures <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 8))
+
+vic.medium.migration.arrivals <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 9))
+vic.medium.migration.departures <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 10))
+
+vic.low.migration.arrivals <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 11))
+vic.low.migration.departures <- setDT(read_excel("Data/32220ds02_2017-2066_projection_assumptions_detailed.xls", sheet = 12))
+
+# Create fertility rates table
+vic.fertility <- FixFertility(vic.high.fertility, vic.medium.fertility, vic.low.fertility)
+rm(vic.high.fertility, vic.medium.fertility, vic.low.fertility)
+saveRDS(vic.fertility, "Data/vic.fertility.rds")
+
+# Create mortality rates table
+vic.mortality <- FixMortality(vic.high.mortality, vic.medium.mortality)
+
+rm(vic.high.mortality, vic.medium.mortality)
+saveRDS(vic.mortality, "Data/vic.mortality.rds")
+
+#Create migration rates table
+vic.migration <- FixMigration(vic.high.migration.arrivals, vic.high.migration.departures, vic.medium.migration.arrivals, vic.medium.migration.departures,
+                              vic.low.migration.arrivals, vic.low.migration.departures)
+rm(vic.high.migration.arrivals, vic.high.migration.departures, vic.medium.migration.arrivals, vic.medium.migration.departures,
+   vic.low.migration.arrivals, vic.low.migration.departures)
+saveRDS(vic.migration, "Data/vic.migration.rds")
+
+# Create a master table merging census and ABS projection data
+# As a approximation the aust.LGA is split into male & female ( .55 to .45 ratio) and LGA aggregated
+# This done to validate the heemod package runtime and must be fixed!
+
+master.pop <- aust.LGA[YARP >= 2006, .(NUMP=sum(NUMP)), by=c("AGEP", "ISO3", "YARP")]
+
+master.pop.female <- master.pop[, .(NUMP = NUMP * .45, SEXP = "Female"), by = c("AGEP", "ISO3", "YARP")]
+master.pop.male <- master.pop[, .(NUMP = NUMP * .55, SEXP = "Male"), by = c("AGEP", "ISO3", "YARP")]
+
+master.pop <- rbind( master.pop.male, master.pop.female)
+
+
+
+
+
+
+
