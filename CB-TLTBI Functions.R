@@ -1,6 +1,7 @@
 
 
 # Time varying transition probability for ltbi -> tb
+# dependent on state time (currently not used). Can be called from within the transition matrix.
 ltbi2tb <- function(state_time) {
 
     if (state_time <= 2) {
@@ -13,7 +14,8 @@ ltbi2tb <- function(state_time) {
 }
 
 
-# get inflow values
+# Gets the inflow values from a data.table (currently not used)
+# Just a proof of concept
 
 get.inflow <- function(mc) {
 
@@ -26,9 +28,33 @@ get.inflow <- function(mc) {
 
 }
 
+
+get.p.sus <- function(year = 0){
+
+    # this is the total number of uninfected migrants that arrived in 2016
+    return(migrants.2016[,sum(num.sus)])
+
+}
+
+
+get.p.ltbi <- function(year = 0){
+
+    # this is the total number of infected migrants that arrived in 2016
+    return(migrants.2016[, sum(num.ltbi)])
+
+}
+
+
+
+get.p.ltbi
+
 # For Heterogeneity & Demographic Analysis used in update()
 test.data <- vic.mortality[Age < 80 & mrate == "Med" & Rate != 1, .(Age.init = Age, Sex, mrate), by = .(Age, Sex, mrate)]
 test.data <- test.data[, 4:6]
+
+
+vic.mortality[Age < 80,.(Age)]
+
 
 # Gets the mortality rate from vic.mortality
 
@@ -164,82 +190,3 @@ strat.nothing <- define_strategy(
 
   )
 
-
-res_mod <- run_model(
-  strategy.9H = strat.9H,
-  strategy.everything = strat.everything,
-  strategy.nothing = strat.nothing,
-  cycles = 10,
-  inflow = define_inflow(p.sus = c(10000,20000,30000,40000,1,1,1,1,1,1), p.ltbi = 5000, p.tb = 0, p.death=0),
-  parameters = param,
-  cost = cost_total,
-  effect = utility
-)
-
-res_mod
-plot(res_mod)
-plot(tmatrix.9H)
-plot(tmatrix.everything)
-
-res_h <- update(res_mod, newdata = test.data)
-res_h
-plot(res_h, type = "counts")
-
-
-
-get_values(res_mod)
-get_counts(res_mod)
-
-
-
-str(res_mod)
-
-plot(tmatrix.9H)
-
-
-# Just junk code from here onwards
-
-
-summary(res_h)
-
-
-summary(res_mod, threshold = c(1000, 5000, 6000, 1e4))
-
-head(get_counts(res_mod))
-
-plot(tmatrix.9H)
-
-attributes(mat_trans)
-
-get_counts(res_mod)
-
-get_values(res_mod)
-
-summary(res_mod)
-
-? dispatch_strategy
-get_who_mr(age = 50, sex = "FMLE", country = "AUS")
-
-? probability
-
-
-plot(res_mod, type = "values", panel = "by_strategy") +
-    xlab("Time") +
-    theme_bw() +
-    scale_color_brewer(
-    name = "State",
-    palette = "Set1"
-  )
-
-
-plot(res_mod, type = "count", panel = "by_state") +
-    xlab("Time") +
-    theme_bw() +
-    scale_color_brewer(
-    name = "Strategy",
-    palette = "Set1"
-  )
-
-
-dev.list()
-dev.off()
