@@ -14,6 +14,18 @@ ltbi2tb <- function(state_time) {
 }
 
 
+# Placeholder function for ltbi reactivation rates
+
+get.react.rate <- function() {
+
+
+
+}
+
+
+
+
+
 # Gets the inflow values from a data.table (currently not used)
 # Just a proof of concept
 
@@ -45,19 +57,7 @@ get.p.ltbi <- function(year = 0){
 }
 
 
-
-get.p.ltbi
-
-# For Heterogeneity & Demographic Analysis used in update()
-test.data <- vic.mortality[Age < 80 & mrate == "Med" & Rate != 1, .(Age.init = Age, Sex, mrate), by = .(Age, Sex, mrate)]
-test.data <- test.data[, 4:6]
-
-
-vic.mortality[Age < 80,.(Age)]
-
-
 # Gets the mortality rate from vic.mortality
-
 get.mortality.rate <- function(S, A, Y, R) {
 
 
@@ -96,7 +96,7 @@ mr = get.mortality.rate(Sex, Age, Year, mrate)
 
 )
 
-
+# react.rate = get.react.rate(state_time)
 # Define states
 
 p.sus <- define_state(
