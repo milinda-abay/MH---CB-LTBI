@@ -8,11 +8,12 @@ options(prompt = "R> ")
 library(tidyverse)
 library(reshape2)
 library(zoo) # used for filling empty AGEP values
-library(data.table)
 library(readxl)
-library(heemod)
-library(diagram)
 library(ggplot2)
+library(data.table)
+
+# library(diagram)
+# library(heemod)
 
 
 # Data cleansing and shaping functions
@@ -274,139 +275,30 @@ vic.fertility <- readRDS("Data/vic.fertility.rds")
 vic.mortality <- readRDS("Data/vic.mortality.rds") # this is also required
 vic.migration <- readRDS("Data/vic.migration.rds")
 vic.pop <- readRDS("Data/vic.pop.rds")
+RRates <- readRDS("Data/RRates.rds") # this is also required
 
-
+saveRDS(pop.output,"Data/pop.output.rds")
 
 # Heemod model setup located within this file.
-# It defines all the states, transistion matrices, strategies, costs and parameters.
+# It defines all the states, transition matrices, strategies, costs and parameters.
 source("CB-TLTBI functions.R")
 
 
-# Create a master.pop table merging census (2006,2011, 2016) and ABS projection data.
-# It must be a long format table with the following structure.
-#
-# Sex of person (SEXP), Age at arrival (AGEP), Year of arrival (YARP),
-# Birth place of person (ISO3), local government area (LGA),
-# Number of persons	(NUMP)
-#__________________________________________________
-# SEXP    | AGEP  |  YARP | ISO3 |  LGA    | NUMP |
-#--------------------------------------------------
-# Male	  | 10	  |  2006 | AFG	 |  Casey  | 4	  |  NUMP =  { average of 3 census (2006,2011,2016) datasets } 
-# Female  |	12	  |  2007 |	IND	 |  Monash | 10	  |  NUMP =  { average of 2 census (2011,2016) datasets } 
-# …	      | …	  |  …	  |  …	 |  …	   | …	  |  
-# Male	  | 30	  |  2016 |	VNM	 |  Hume   | 7	  |  NUMP =  { census 2016 datasets } 
-# …	      | …	  |  …	  |  …	 |  …	   | …	  |
-# ------------------2017---------------------------	No data for YARP 2017
-# Male	  | 50	  |  2018 |	?	 |  ?	   | 324  |	ABS migration projection with three assumptions (high, med & low ) by arrivals and departures
-# Female  |	40	  |  2027 |	?	 |  ?	   | 721  |	Net overseas migration levels will remain constant from YARP>2027 onwards
-#						
-# TODO -> Based on census datasets (2006,2011,2016) estimate a NUMP distribution for YARP > 2018  by LGA and ISO3.						
-#
-#
-#
-# As a validation exercise the aust.LGA cohort is duplicated into male & female and LGA aggregated
-# This done to validate the heemod package runtime. It must be fixed!
+pop.master <- Create.Population.Master()
 
-master.pop.male <- aust.LGA[YARP == 2016, .(NUMP=sum(NUMP), SEXP = "Male"), by=c("AGEP", "ISO3", "YARP")]
-master.pop.female <- aust.LGA[YARP == 2016, .(NUMP = sum(NUMP), SEXP = "Female"), by = c("AGEP", "ISO3", "YARP")]
-
-master.pop <- rbind( master.pop.male, master.pop.female)
-rm(master.pop.female, master.pop.male)
-
-# This creates the probability of infection at migration (pim) by country and age.
-prob.Inf.2016 <- prob.Inf[YARP == 2016, .(pim = (1 - exp(-sum(Ho1, Ho2, Ho3))), AGEP = YARP - YOBP), by = .(ISO3, YOBP)]
-
-master.pop[prob.Inf.2016,
-    c("num.ltbi","num.sus") := .(NUMP*pim,NUMP*(1-pim)),
-    on = .(ISO3,AGEP)]
-
-migrants.2016 <- master.pop[, .(.weights = sum(NUMP), num.ltbi = sum(num.ltbi), num.sus = sum(num.sus), mrate = "Med"),
-    by = .(AGEP, SEXP)][, .(Age.init = AGEP, Sex = SEXP, .weights, num.ltbi, num.sus, mrate)]
+# Model parameters
+start.year <- 2016
+year <- start.year # initialise year with start.year
+markov.cycle <- 0 # Tracks the current cycle
+cycles <- 10 # Model run cycles 
 
 
+# Creates and initialises the population output table for the model (markov.cycle = 0)
+pop.output <- pop.master[YARP <= year][, cycle := markov.cycle]
 
-# Model runtime code
+# TODO - If start.year != 2016 then recalculate AGEP at start.year!
 
-results.model <- run_model(
-  strategy.everything = strat.everything,
-  strategy.9H = strat.9H,
-  strategy.nothing = strat.nothing,
-  cycles = 10,
-  init = define_init(p.sus = get.p.sus(), p.ltbi = get.p.ltbi(), p.tb = 0, p.death = 0),
-  inflow = c(0,0,0,0), 
-  parameters = param,
-  cost = cost_total,
-  effect = utility
-)
-
-# can be used in the run_model() function
-# inflow = define_inflow(p.sus = c(10000, 20000, 30000, 40000, 1, 1, 1, 1, 1, 1), p.ltbi = 5000, p.tb = 0, p.death = 0),
-# inflow = define_inflow(p.sus = get.inflow(Year), p.ltbi = 5000, p.tb = 0, p.death = 0),
-
-
-summary(results.model)
-
-
-# Updates the initial model with weights of each strata in the target population migrants.2016
-results.updated.model <- update(results.model, newdata = migrants.2016)
-summary(results.updated.model)
-
-
-
-
-
-
-str(res_mod)
-
-plot(tmatrix.9H)
-
-
-# Just junk code from here onwards
-
-
-summary(res_h)
-
-
-summary(res_mod, threshold = c(1000, 5000, 6000, 1e4))
-
-head(get_counts(res_mod))
-
-
-
-attributes(mat_trans)
-
-get_counts(res_mod)
-
-get_values(res_mod)
-
-summary(res_mod)
-
-? dispatch_strategy
-get_who_mr(age = 50, sex = "FMLE", country = "AUS")
-
-? probability
-
-
-plot(res_mod, type = "values", panel = "by_strategy") +
-    xlab("Time") +
-    theme_bw() +
-    scale_color_brewer(
-    name = "State",
-    palette = "Set1"
-  )
-
-
-plot(res_mod, type = "count", panel = "by_state") +
-    xlab("Time") +
-    theme_bw() +
-    scale_color_brewer(
-    name = "Strategy",
-    palette = "Set1"
-  )
-
-
-dev.list()
-dev.off()
+Run.Model()
 
 
 
