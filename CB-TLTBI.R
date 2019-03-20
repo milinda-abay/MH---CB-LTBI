@@ -49,6 +49,8 @@ state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.tr", "p.sus.fp.tc", "p.sus.tn"
                  "p.ltbi.tp.tc.tbr", "p.ltbi.fn", "p.ltbi.fn.tb", "p.ltbi.fn.tbr",
                  "p.death", "p.tp.tb.death", "p.fn.tb.death")
 
+# Baseline with reduced states
+state.names <- c("p.sus", "p.ltbi", "p.ltbi.tb", "p.tb.death", "p.death")
 
  #CreateStates(state.names) # --- not used --- instantiates a set of states objects with default vaules
 
@@ -73,6 +75,13 @@ transMatrix <- DefineTransition(CMP,0.01, 0.005, 0, 0.09, 0, 0, 0, 0, 0, 0, 0, 0
                                 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
                                 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, state.names = state.names)
 
+# Baseline transition matrix
+transMatrix <- DefineTransition(CMP, 0, 0, 0, param$MR,
+                                0, CMP, param$RR, 0, param$MR,
+                                0, 0, CMP, 0.00256, param$MR,
+                                0, 0, 0, 1, 0,
+                                0, 0, 0, 0, 1, state.names = state.names)
+
 
 # Creates an unevaluated set of parameters
 parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
@@ -89,7 +98,10 @@ markov.cycle <- 0 # Tracks the current cycle
 cycles <- 10 # Model run cycles 
 
 # Creates and initialises the population output table for the model (markov.cycle = 0)
-pop.output <- pop.master[YARP <= year & AGERP <= 40 & AGEP <= 40][, cycle := markov.cycle][1:10]
+# pop.output <- pop.master[YARP <= year & AGERP <= 40 & AGEP <= 40][, cycle := markov.cycle][1:100]
+pop.output <- pop.master[YARP <= year][, cycle := markov.cycle]
+
+
 
 # TODO - If start.year != 2016 then recalculate AGEP at start.year!
 
@@ -97,3 +109,5 @@ pop.output <- RunModel(pop.output)
 
 # Saves output
 saveRDS(pop.output, "Data/pop.output.rds")
+
+Sys.time()

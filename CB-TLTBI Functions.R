@@ -136,14 +136,22 @@ CalculateCMP <- function(tM, l, z) {
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
 PerformMatrixMultiplication <- function(dM, tM, l, z) {
 
-    x <- cbind(dM, tM)
+    # Make the current data matrix a list
+    bar <- unlist(dM)
+
+    # Make it an array then permute it
+    dim(bar) <- c(z, l, 1)
+    bar <- aperm(bar, perm = c(3, 2, 1))
+
+    # Do the same for the transition matrix
+    foo <- unlist(tM)
+    dim(foo) <- c(z, l, l)
+    foo <- aperm(foo, perm = c(3, 2, 1))
+
+    # Carry out the matrix multiplication with a data.table frame.
+    # Enables iteration and subsetting by using .I
+    dM[, as.list(matrix(bar[,, .I], ncol = l) %*% foo[,, .I]), by = seq_len(z)]
     
-    x[, as.list(matrix(unlist(x[.I, 1:l]), nrow = 1, ncol = l, byrow = TRUE) %*% matrix(unlist(x[.I, (l + 1):ncol(x)]), nrow = l, ncol = l, byrow = TRUE)),
-    by = seq_len(z)]
-
-    #x[, .(list(matrix(unlist(x[.I, 1:l]), nrow = 1, ncol = l, byrow = TRUE) %*% matrix(unlist(x[.I, (l + 1):ncol(x)]), nrow = l, ncol = l, byrow = TRUE))),
-    #by = 1:z][,.(V1)]
-
 }
 
 
@@ -165,7 +173,9 @@ GetStateCounts <- function(DT, year) {
 
     # a Hack for YARP < 2016, vic mortality doesnt have data to look up 
     param$MR[is.na(param$MR)] <- 0.01
+    param$RR[is.na(param$RR)] <- 0.0013
 
+    
     # assign the current environment for evaluation. 
     for (i in 1:length(transMatrix)) {
 
@@ -192,9 +202,15 @@ GetStateCounts <- function(DT, year) {
     # Select the numeric state value columns in preparation for multiplication.
     dM <- DT[, ..state.names]
 
-    results <- PerformMatrixMultiplication(dM, tM, l, z)
+    
 
-    # browser() # uncomment for testing
+    print("PMM Start")
+    print(Sys.time())
+    results <- PerformMatrixMultiplication(dM, tM, l, z)
+    print("PMM End")
+    print(Sys.time())
+
+    #browser() # uncomment for testing
 
     #typeof(results)
     #class(results)
@@ -264,8 +280,6 @@ RunModel <- function(pop.output) {
 
     pop.output
 }
-
-
 
 # Utility functions for data cleansing and reshaping
 FixFertility <- function(hf, mf, lf) {
@@ -511,7 +525,6 @@ CreateRDSDataFiles <- function() {
 
 }
 
-
 # Creates a master migrant population table
 CreatePopulationMaster <- function() {
 
@@ -538,21 +551,31 @@ CreatePopulationMaster <- function() {
     # As a validation exercise the aust.LGA cohort is duplicated into male & female and LGA aggregated
     # This done to validate the model runtime. It must be fixed!
 
-    pop.master.male <- aust.LGA[, .(NUMP = .5 * sum(NUMP), LTBP = sum(LTBP), AGERP = AGEP - (2016 - YARP), SEXP = "Male"), by = c("AGEP", "ISO3", "YARP")]
+    pop.master.male <- aust.LGA[, .(NUMP = .5 * sum(NUMP), LTBP = .5 * sum(LTBP), AGERP = AGEP - (2016 - YARP), SEXP = "Male"), by = c("AGEP", "ISO3", "YARP")]
     pop.master.female <- pop.master.male[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP, SEXP = "Female")]
 
     pop.master <- rbind(pop.master.male, pop.master.female)
     rm(pop.master.female, pop.master.male)
 
-    # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017, 2018, 2019.
+    # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017 to 2025.
     # again this is for validating the model at runtime.
 
     pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
 
-    pop.master <- rbind(pop.master, pop.master.2017, pop.master.2018, pop.master.2019)
-    rm(pop.master.2017, pop.master.2018, pop.master.2019)
+    pop.master <- rbind(pop.master, pop.master.2017, pop.master.2018, pop.master.2019,
+                        pop.master.2020, pop.master.2021, pop.master.2022, pop.master.2023,
+                        pop.master.2024, pop.master.2025)
+
+    rm(pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
+       pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025)
 
     # Must order the pop.master table by YARP due to subsetting and recombining. 
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
@@ -560,6 +583,8 @@ CreatePopulationMaster <- function() {
     # Remove australian born and calculates the susceptible and latent population
     # TODO - Fix this! It is hard coded for 17 states.
     pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
+
+    #pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
 
     pop.master <- pop.master[, AGERP := AGEP-(2016-YARP)]
 
@@ -625,3 +650,19 @@ CreateStates <- function(state.names) {
                               #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
                               #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
                               #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+
+
+#PMM <- function(dM, tM, l, z) {
+
+    #x <- cbind(dM, tM)
+
+    #browser()
+
+    #x[, as.list(matrix(unlist(x[.I, 1:l]), nrow = 1, ncol = l, byrow = TRUE) %*% matrix(unlist(x[.I, (l + 1):ncol(x)]), nrow = l, ncol = l, byrow = TRUE)),
+    #by = seq_len(z)]
+
+    ##x[, .(list(matrix(unlist(x[.I, 1:l]), nrow = 1, ncol = l, byrow = TRUE) %*% matrix(unlist(x[.I, (l + 1):ncol(x)]), nrow = l, ncol = l, byrow = TRUE))),
+    ##by = 1:z][,.(V1)]
+
+
+#}
