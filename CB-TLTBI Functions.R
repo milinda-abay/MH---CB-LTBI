@@ -18,7 +18,7 @@ DefineTransition <- function(..., state.names) {
     .dots <- lazyeval::lazy_dots(...)
     n <- sqrt(length(.dots))
 
-    if (identical(n, floor(n))) {
+    if (!identical(n, floor(n))) {
 
         stop("Not a square Matrix. Check number of inputs.")
     }
