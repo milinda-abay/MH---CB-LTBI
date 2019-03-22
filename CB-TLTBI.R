@@ -28,7 +28,7 @@ source("CB-TLTBI functions.R")
 # This function uses the above three Fix* functions. 
 # Run once to create the *.rds objects (vic.fertility, vic.mortality, vic.migration)
 # based on ABS's population porjection data
-CreateRDSDataFiles()
+#CreateRDSDataFiles()
 
 
 # Read the data files (if required)
@@ -129,11 +129,13 @@ pop.master <- CreatePopulationMaster()
 start.year <- 2016
 year <- start.year # initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
-cycles <- 10 # Model run cycles 
+cycles <- 10 # Model run cycles
+
+n_cohorts_to_evaluate <- nrow(pop.master) # Can be adjusted to save running time if you don't want to evaluate the entire population
 
 # Creates and initialises the population output table for the model (markov.cycle = 0)
 # pop.output <- pop.master[YARP <= year & AGERP <= 40 & AGEP <= 40][, cycle := markov.cycle][1:100]
-pop.output <- pop.master[YARP <= year][, cycle := markov.cycle]
+pop.output <- pop.master[YARP <= year][, cycle := markov.cycle][1: n_cohorts_to_evaluate]
 
 
 
