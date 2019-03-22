@@ -18,15 +18,15 @@ DefineTransition <- function(..., state.names) {
     .dots <- lazyeval::lazy_dots(...)
     n <- sqrt(length(.dots))
 
-    
+    if (identical(n, floor(n))) {
 
-    names(.dots) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
+        stop("Not a square Matrix. Check number of inputs.")
+    }
 
-    #x <- rep(x = seq(1, n ^ 2, by = n), times = n) + rep(0:(n - 1), each = n)
-    #.dots <- .dots[x]
-    
+
     CheckComplement(.dots)
 
+    names(.dots) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
 
     structure(.dots, class = c("uneval_matrix", class(.dots)), state.names = as.vector(state.names))
 
@@ -94,6 +94,13 @@ Get.RR <- function(DT, year) {
 
     RRates[DT[, .(AGERP, SEXP, ST = year - YARP)], Rate, on = .(Age = AGERP, Sex = SEXP, statetime = ST)]
 
+}
+
+
+Get.TBMR <- function(DT, year) {
+
+    vic.tb.mortality[DT[, .(AGEP, SEXP)], rate, on = .(age = AGEP, sex = SEXP)]
+    
 }
 
 # Calculates the CMP value after evaluation of the promise objects in parameter and transition matrix.
@@ -165,6 +172,7 @@ GetStateCounts <- function(DT, year) {
     # TODO - create a function for multiple parameters
     parameters$MR$env <- environment()
     parameters$RR$env <- environment()
+    parameters$TBMR$env <- environment()
 
     # evaluate parameters 
     # NOTE: at this point both Get.MR() and Get.RR() functions are called by the evaluator.
@@ -174,6 +182,7 @@ GetStateCounts <- function(DT, year) {
     # a Hack for YARP < 2016, vic mortality doesnt have data to look up 
     param$MR[is.na(param$MR)] <- 0.01
     param$RR[is.na(param$RR)] <- 0.0013
+    param$TBMR[is.na(param$TBMR)] <- 0.01
 
     
     # assign the current environment for evaluation. 
@@ -183,8 +192,10 @@ GetStateCounts <- function(DT, year) {
 
     }
 
+
     # Evaluates the transition matrix and insert a '-pi' placeholder for CMP.
     tM <- lazy_eval(transMatrix, data = list(CMP = -pi))
+
 
     # Scalar values don't get evaluated into vectors
     # loop and manually expand to vectors
@@ -195,6 +206,7 @@ GetStateCounts <- function(DT, year) {
             tM[[i]] <- rep(tM[[i]], times = z)
         }
     }
+
 
     # Manipulates the tM to calculate the CMP
     tM <- CalculateCMP(tM, l, z)
@@ -522,6 +534,15 @@ CreateRDSDataFiles <- function() {
     rm(vic.high.migration.arrivals, vic.high.migration.departures, vic.medium.migration.arrivals, vic.medium.migration.departures, vic.low.migration.arrivals, vic.low.migration.departures)
     saveRDS(vic.migration, "Data/vic.migration.rds")
 
+    # Create and save TB mortality rates
+    vic.tb.mortality <- fread("Data/TBmortality_VIC_2002_2013.csv")
+    vic.tb.mortality <- vic.tb.mortality[sex != "both"][, .(age, sex, rate = (died / total) / (2014 - 2002))]
+    vic.tb.mortality[sex == "male", sex := "Mmale"]
+    vic.tb.mortality[sex == "female", sex := "Female"]
+    saveRDS(vic.tb.mortality , "Data/vic.tb.mortality.rds")
+
+
+
 
 }
 
@@ -581,10 +602,10 @@ CreatePopulationMaster <- function() {
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
 
     # Remove australian born and calculates the susceptible and latent population
-    # TODO - Fix this! It is hard coded for 17 states.
-    pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
+    # TODO - Fix this! It is hard coded for 23 states.
+    pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0)]
 
-    #pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
+    # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
 
     pop.master <- pop.master[, AGERP := AGEP-(2016-YARP)]
 

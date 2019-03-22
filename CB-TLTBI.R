@@ -42,50 +42,84 @@ vic.mortality <- readRDS("Data/vic.mortality.rds") # this is also required
 vic.migration <- readRDS("Data/vic.migration.rds")
 vic.pop <- readRDS("Data/vic.pop.rds")
 RRates <- readRDS("Data/RRates.rds") # this is also required
+vic.tb.mortality <- readRDS("Data/vic.tb.mortality.rds") # this is also required
 
 # Creatinga a vector of state names
-state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.tr", "p.sus.fp.tc", "p.sus.tn",
-                 "p.ltbi", "p.ltbi.tp.t", "p.ltbi.tp.tr", "p.ltbi.tp.tc", "p.ltbi.tp.tc.tb",
-                 "p.ltbi.tp.tc.tbr", "p.ltbi.fn", "p.ltbi.fn.tb", "p.ltbi.fn.tbr",
-                 "p.death", "p.tp.tb.death", "p.fn.tb.death")
-
-# Baseline with reduced states
-state.names <- c("p.sus", "p.ltbi", "p.ltbi.tb", "p.tb.death", "p.death")
+state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn",
+                 "p.ltbi", "p.ltbi.tp.t", "p.ltbi.tp.tc", "p.ltbi.tp.tc.tb", "p.ltbi.tp.tc.tbr",
+                 "p.ltbi.tp.nt", "p.ltbi.tp.nt.tb", "p.ltbi.tp.nt.tbr", "p.ltbi.fn", "p.ltbi.fn.tb",
+                 "p.ltbi.fn.tbr", "p.ltbi.tb", "p.ltbi.tbr", "p.ltbi.tp.tc.tb.death", "p.ltbi.tp.nt.tb.death",
+                 "p.ltbi.fn.tb.death", "p.ltbi.tb.death", "p.death")
 
  #CreateStates(state.names) # --- not used --- instantiates a set of states objects with default vaules
 
 # Creates an unevaluated transition matrix
 # Use 'CMP' for complement and 'param$*' for parameters.
 # Each parameter must be a pairlist argument in DefineParameters().
-transMatrix <- DefineTransition(CMP,0.01, 0.005, 0, 0.09, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR, 0, 0,
-                                0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                                0,  0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, param$RR, 0, 0, 0.01, 0, 0,
-                                0,  0, .2, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                                0,  0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                                0,  0, 0, 0, 0, 0.97, 0.01, 0.005, 0, 0, 0, 0.005, 0, 0, 0.01, 0, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0.99, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0.98, 0, 0, 0, 0, 0, 0, 0.01, 0.01, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0.98, 0.01, 0, 0, 0, 0, 0.01, 0, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0.49, 0, 0, 0, 0.01, 0.5, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0.99, 0, 0, 0, 0.01, 0, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.89, 0.1, 0, 0.01, 0, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.49, 0.01, 0, 0.5,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.99, 0.01, 0, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-                                0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, state.names = state.names)
+transMatrix4R <- DefineTransition(CMP, 0.05 * 0.07 * 0.6818, 0.05 * 0.07 * 0.3182, 0, 0.05 * 0.93, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, CMP, 0.05 * 0.5915 * 0.6818, 0, 0, 0, .05 * 0.5915 * 0.3182, 0, 0, 0.05 * 0.4085, 0, 0, param$RR, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, CMP, 0.04 * param$RR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, param$TBMR, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, param$RR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, param$TBMR, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, param$RR, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$TBMR, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, param$TBMR, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, state.names = state.names)
+
+
 
 # Baseline transition matrix
-transMatrix <- DefineTransition(CMP, 0, 0, 0, param$MR,
-                                0, CMP, param$RR, 0, param$MR,
-                                0, 0, CMP, 0.00256, param$MR,
-                                0, 0, 0, 1, 0,
-                                0, 0, 0, 0, 1, state.names = state.names)
+transMatrixBaseline <- DefineTransition(CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$RR, 0, 0, 0, 0, 0, param$MR,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, param$TBMR, param$MR,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$MR,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+                                        state.names = state.names)
+
+
+# Depending on which model to run
+transMatrix <- transMatrix4R
+# transMatrix <- transMatrixBaseline
+
 
 
 # Creates an unevaluated set of parameters
 parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
-                               RR = Get.RR(DT, year))
+                               RR = Get.RR(DT, year),
+                               TBMR = Get.TBMR(DT, year))
+
 
 
 # Uses aust.LGA.rds file to create a sample input
@@ -108,6 +142,6 @@ pop.output <- pop.master[YARP <= year][, cycle := markov.cycle]
 pop.output <- RunModel(pop.output)
 
 # Saves output
-saveRDS(pop.output, "Data/pop.output.rds")
+saveRDS(pop.output, "Data/pop.output.Baseline.rds")
 
 Sys.time()
