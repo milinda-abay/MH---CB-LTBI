@@ -16,20 +16,22 @@ DefineStates <- function(...) {
 DefineTransition <- function(..., state.names) {
 
     .dots <- lazyeval::lazy_dots(...)
-    n <- sqrt(length(.dots))
-
-    if (!identical(n, floor(n))) {
-
-        stop("Not a square Matrix. Check number of inputs.")
-    }
-
-
+    CheckSquare(.dots)
     CheckComplement(.dots)
 
+    n <- sqrt(length(.dots))
     names(.dots) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
 
     structure(.dots, class = c("uneval_matrix", class(.dots)), state.names = as.vector(state.names))
+}
 
+
+# Simple function to check that the number of elements of a list or vector input is an exact square number
+CheckSquare <- function(list_or_vector) {
+    root <- sqrt(length(list_or_vector))
+    if (!root %% 1 == 0) {
+        stop("Not a square Matrix, check number of arguments")
+    }
 }
 
 
