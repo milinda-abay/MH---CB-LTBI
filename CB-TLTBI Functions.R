@@ -13,19 +13,16 @@ DefineStates <- function(...) {
 
 DefineTransition <- function(..., state.names) {
 
+    # Extract transition matrix from first arguments, of any number, and assign names
     .dots <- lazyeval::lazy_dots(...)
-    CheckComplement(.dots)
     n <- sqrt(length(.dots))
-    CheckSquare(n, state.names)
     names(.dots) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
+    
+    # Perform checks
+    CheckSquare(n, state.names)
+    CheckComplement(.dots, n)
+    
     structure(.dots, class = c("uneval_matrix", class(.dots)), state.names = as.vector(state.names))
-}
-
-
-CheckSquare <- function(root, states) {
-  if (!length(states) == root) {
-    stop("Transition matrix is not square of number of states")
-  }
 }
 
 
@@ -46,10 +43,16 @@ DefineStrategy <- function(..., transition = DefineTransition()) {
 
 # The following functions perform various calculations at model runtime.
 #------------------------------------------------------------------------#
+
+CheckSquare <- function(root, states) {
+  if (!length(states) == root) {
+    stop("Transition matrix is not square of number of states")
+  }
+}
+
 # Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
-CheckComplement <- function(transition.matrix) {
-  
-    l <- sqrt(length(transition.matrix))
+CheckComplement <- function(transition.matrix, l) {
+
     cmp.pos <- sapply(transition.matrix, function(x) x[1], simplify = TRUE)
 
     # which(cmp.pos == quote(CMP))
@@ -205,11 +208,11 @@ GetStateCounts <- function(DT, year) {
 
     
 
-    print("PMM Start")
-    print(Sys.time())
+    #print("PMM Start")
+    #print(Sys.time())
     results <- PerformMatrixMultiplication(dM, tM, l, z)
-    print("PMM End")
-    print(Sys.time())
+    #print("PMM End")
+    #print(Sys.time())
 
     #browser() # uncomment for testing
 
@@ -240,8 +243,8 @@ RunModel <- function(pop.output) {
 
     while (markov.cycle != cycles) {
 
-        print(nrow(pop.calculated))
-        print(pop.calculated[1:10,.N, by =.(AGEP,cycle)])
+        #print(nrow(pop.calculated))
+        #print(pop.calculated[1:10,.N, by =.(AGEP,cycle)])
 
         # The iterative solution where each row is calculated by passing '.I' to GetStateCounts
         # pop.calculated[, c(state.names) := GetStateCounts(pop.calculated[.I], year), by = seq_len(nrow(pop.calculated))]
