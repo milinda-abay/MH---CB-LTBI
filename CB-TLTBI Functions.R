@@ -50,28 +50,17 @@ CheckSquare <- function(root, states) {
   }
 }
 
-# Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
 CheckComplement <- function(transition.matrix, l) {
+    # Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
 
     cmp.pos <- sapply(transition.matrix, function(x) x[1], simplify = TRUE)
-
-    # which(cmp.pos == quote(CMP))
-
     cmp.pos <- cmp.pos == quote(CMP)
-
     dim(cmp.pos) <- c(l, l)
 
-    # Transpose cmp.pos because the dimensions are filled column wise
-    cmp.pos <- t(cmp.pos)
-
-    rowSums(cmp.pos, dims = 1)
-
-    if (!all(rowSums(cmp.pos) <= 1)) {
+    # Sum by columns because cmp.pos because is filled column-wise and so is tranposed
+    if (!all(colSums(cmp.pos) <= 1)) {
         stop("Only one 'CMP' is allowed per matrix row.")
     } 
-    else {
-        return()
-    }
 }
 
 # Look up the mortality rate from vic.mortality
@@ -208,11 +197,11 @@ GetStateCounts <- function(DT, year) {
 
     
 
-    #print("PMM Start")
-    #print(Sys.time())
+    print("PMM Start")
+    print(Sys.time())
     results <- PerformMatrixMultiplication(dM, tM, l, z)
-    #print("PMM End")
-    #print(Sys.time())
+    print("PMM End")
+    print(Sys.time())
 
     #browser() # uncomment for testing
 
@@ -243,8 +232,8 @@ RunModel <- function(pop.output) {
 
     while (markov.cycle != cycles) {
 
-        #print(nrow(pop.calculated))
-        #print(pop.calculated[1:10,.N, by =.(AGEP,cycle)])
+        print(nrow(pop.calculated))
+        print(pop.calculated[1:10,.N, by =.(AGEP,cycle)])
 
         # The iterative solution where each row is calculated by passing '.I' to GetStateCounts
         # pop.calculated[, c(state.names) := GetStateCounts(pop.calculated[.I], year), by = seq_len(nrow(pop.calculated))]
