@@ -65,22 +65,42 @@ CheckComplement <- function(transition.matrix, l) {
 
 CreateArgumentList <- function(state.names, state.number) {
 
+    
     # Create and initialise a list
     arglist <- rep(list(NA), state.number ^ 2)
     dim(arglist) <- c(state.number, state.number)
 
-  
-    arglist[1,] <- c(quote(CMP), quote(0.05 * 0.07 * 0.6818), 0.05 * 0.07 * 0.3182, 0, 0.05 * 0.93, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, quote(MR))
+    # Returns a list of functions and attaches it to the calling object.
+    list(
+
+    update.row = function(row, rowvalues) { #because it is column-wise
+        arglist[,row] <<- rowvalues },
+    update.cell = function(row, col, value) { arglist[[row, col]] <<- value },
+    show.list = function() arglist,
+    add.state.name = function(state.names) {
+        arglist[[state.number ^ 2 + 1]] <<- state.names
+        names(arglist)[state.number ^ 2 + 1] <<- "state.names"
+    },
+
+    drop.state.name = function() {
+        arglist[state.number ^ 2 + 1] <<- NULL
+        dim(arglist) <<- c(state.number, state.number)
+    },
+
+    save.list = function(list.name) {
+        # TODO: need to figure out how to reference the calling object
+        # or pass the object name as a parameter 
+        saveRDS(arglist, paste("Data/",list.name,".rds", sep = ""))
+    },
+
+    load.list = function(list.name) {
+        arglist <<- readRDS(paste("Data/",list.name,".rds", sep = ""))
+        
+    }
+
+    )
+
     
-    print(arglist)
-
-
-
-    arglist[[state.number ^ 2 + 1]] <- state.names
-    names(arglist)[530] <- "state.names"
-
-    arglist
-
 }
 
 # Look up the mortality rate from vic.mortality

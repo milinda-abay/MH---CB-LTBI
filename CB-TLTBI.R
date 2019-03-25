@@ -54,9 +54,30 @@ state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn"
 # Number of states
 state.number <- length(state.names)
 
+# Sample commands demonstrating the functional argument list. 
 arglist.4R <- CreateArgumentList(state.names, state.number)
 
-transMatrix4R <- do.call(DefineTransition, arglist.4R)
+# updates a row. Note: unevaluated parameter have to be wrapped in a quote()
+arglist.4R$update.row(1, c(quote(CMP), 1, 2, 3, 4, 5, 6, 7, 8, 9, quote(param$MR), 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21))
+arglist.4R$update.cell(2,2, quote(CMP))
+
+# Show list with N x N state dimensions (note: column-wise layout)
+arglist.4R$show.list()
+
+# Add the state names as the final argument
+arglist.4R$add.state.name(state.names)
+
+# Drop the state name and reset the dimension.
+arglist.4R$drop.state.name()
+
+# Save the argument list. 
+arglist.4R$save.list("arglist.4R")
+
+# Load the argument list
+arglist.4R$load.list("arglist.4R")
+
+# alternate method of calling DefineTransition
+transMatrix4R <- do.call(DefineTransition, arglist.4R$show.list())
 
 
 #CreateStates(state.names) # --- not used --- instantiates a set of states objects with default vaules
