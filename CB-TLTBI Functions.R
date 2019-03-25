@@ -63,6 +63,26 @@ CheckComplement <- function(transition.matrix, l) {
     } 
 }
 
+CreateArgumentList <- function(state.names, state.number) {
+
+    # Create and initialise a list
+    arglist <- rep(list(NA), state.number ^ 2)
+    dim(arglist) <- c(state.number, state.number)
+
+  
+    arglist[1,] <- c(quote(CMP), quote(0.05 * 0.07 * 0.6818), 0.05 * 0.07 * 0.3182, 0, 0.05 * 0.93, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, quote(MR))
+    
+    print(arglist)
+
+
+
+    arglist[[state.number ^ 2 + 1]] <- state.names
+    names(arglist)[530] <- "state.names"
+
+    arglist
+
+}
+
 # Look up the mortality rate from vic.mortality
 Get.MR <- function(DT, year, rate.assumption = "High") {
 
@@ -99,10 +119,6 @@ CalculateCMP <- function(tM, l, z) {
 
     # now set -pi's to 0
     y[posC] <- 0
-
-    #which(y == -pi)
-
-    #rowSums(y, dims = 2)
 
     # dropping the 3rd dimension in order to select the rowSums in sequence.
     valC <- 1 - rowSums(y, dims = 2)[which(posC, arr.ind = TRUE)[, -3]]
@@ -205,20 +221,7 @@ GetStateCounts <- function(DT, year) {
 
     #browser() # uncomment for testing
 
-    #typeof(results)
-    #class(results)
-
     results[, - c("seq_len")]
-
-
-    # The iterative solution where .I is passed
-    # tM <- matrix(unlist(lazy_eval(transMatrix)), nrow = length(state.names), ncol = length(state.names),
-    #byrow = TRUE, dimnames = list(state.names))
-
-    #dM <- as.matrix(DT[, ..state.names])
-    #dM[is.na(dM)] <- 0
-
-    #as.list(dM %*% tM)
 
 }
 
@@ -234,9 +237,6 @@ RunModel <- function(pop.output) {
 
         print(nrow(pop.calculated))
         print(pop.calculated[1:10,.N, by =.(AGEP,cycle)])
-
-        # The iterative solution where each row is calculated by passing '.I' to GetStateCounts
-        # pop.calculated[, c(state.names) := GetStateCounts(pop.calculated[.I], year), by = seq_len(nrow(pop.calculated))]
 
         # The vectorised solution where the entire table is passed to GetStateCounts
         pop.calculated[, c(state.names) := GetStateCounts(pop.calculated, year)]
@@ -622,49 +622,3 @@ CreateStates <- function(state.names) {
 
 
 
-
-## Create a transition matrix
-#if (length(state.names) ^ 2 == length(transition.probabilities)) {
-    #transistion.matrix <- matrix(data = transition.probabilities, nrow = length(state.names), ncol = length(state.names), byrow = T, dimnames = list(state.names))
-    #colnames(transistion.matrix) <- state.names
-#} else {
-    #transition.matrix <- "Error, check dimensions"
-#}
-
-
-
-
-## Create a vector of transition probabilities
-#transition.probabilities <- c(0.885, 0.01, 0.005, 0, 0.09, 0, 0, 0, 0, 0, 0, 0, 0, 0, quote(Get.MR()), 0, 0,
-                              #0, 0, 0, 0.99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                              #0, 0, 0.99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                              #0, 0, 0, 0.99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                              #0, 0, 0, 0, 0.99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                              #0, 0, 0, 0, 0, 0.97, 0.01, 0.005, 0, 0, 0, 0.005, 0, 0, 0.01, 0, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0.99, 0, 0, 0, 0, 0, 0.01, 0, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0.98, 0, 0, 0, 0, 0, 0, 0.01, 0.01, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0.98, 0.01, 0, 0, 0, 0, 0.01, 0, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.49, 0, 0, 0, 0.01, 0.5, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.99, 0, 0, 0, 0.01, 0, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.89, 0.1, 0, 0.01, 0, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.49, 0.01, 0, 0.5,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.99, 0.01, 0, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-                              #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
-
-
-#PMM <- function(dM, tM, l, z) {
-
-    #x <- cbind(dM, tM)
-
-    #browser()
-
-    #x[, as.list(matrix(unlist(x[.I, 1:l]), nrow = 1, ncol = l, byrow = TRUE) %*% matrix(unlist(x[.I, (l + 1):ncol(x)]), nrow = l, ncol = l, byrow = TRUE)),
-    #by = seq_len(z)]
-
-    ##x[, .(list(matrix(unlist(x[.I, 1:l]), nrow = 1, ncol = l, byrow = TRUE) %*% matrix(unlist(x[.I, (l + 1):ncol(x)]), nrow = l, ncol = l, byrow = TRUE))),
-    ##by = 1:z][,.(V1)]
-
-
-#}

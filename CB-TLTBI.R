@@ -51,6 +51,14 @@ state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn"
                  "p.ltbi.fn.tbr", "p.ltbi.tb", "p.ltbi.tbr", "p.ltbi.tp.tc.tb.death", "p.ltbi.tp.nt.tb.death",
                  "p.ltbi.fn.tb.death", "p.ltbi.tb.death", "p.death")
 
+# Number of states
+state.number <- length(state.names)
+
+arglist.4R <- CreateArgumentList(state.names, state.number)
+
+transMatrix4R <- do.call(DefineTransition, arglist.4R)
+
+
 #CreateStates(state.names) # --- not used --- instantiates a set of states objects with default vaules
 
 # Creates an unevaluated transition matrix
@@ -141,4 +149,3 @@ pop.output <- RunModel(pop.output[1: cohorts_to_track])
 # Saves output
 saveRDS(pop.output, "Data/pop.output.Baseline.rds")
 
-Sys.time()
