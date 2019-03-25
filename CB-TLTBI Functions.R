@@ -7,31 +7,22 @@
 DefineStates <- function(...) {
 
     .dots <- lazyeval::lazy_dots(...)
-
     structure(.dots, class = c("state", class(.dots)))
-
 }
 
 
 DefineTransition <- function(..., state.names) {
 
+    # Extract transition matrix from first arguments, of any number, and assign names
     .dots <- lazyeval::lazy_dots(...)
-    CheckSquare(.dots)
-    CheckComplement(.dots)
-
     n <- sqrt(length(.dots))
     names(.dots) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
-
+    
+    # Perform checks
+    CheckSquare(n, state.names)
+    CheckComplement(.dots, n)
+    
     structure(.dots, class = c("uneval_matrix", class(.dots)), state.names = as.vector(state.names))
-}
-
-
-# Simple function to check that the number of elements of a list or vector input is an exact square number
-CheckSquare <- function(list_or_vector) {
-    root <- sqrt(length(list_or_vector))
-    if (!root %% 1 == 0) {
-        stop("Not a square Matrix, check number of arguments")
-    }
 }
 
 
@@ -39,49 +30,37 @@ DefineParameters <- function(...) {
 
     .dots <- lazyeval::lazy_dots(...)
     structure(.dots, class = c("uneval_parameters", class(.dots)))
-
 }
 
 
 DefineStrategy <- function(..., transition = DefineTransition()) {
 
     .dots <- lazyeval::lazy_dots(...)
-
     states <- structure(.dots, class = c("uneval_state_list", class(.dots)))
-
     structure(list(transition = transition, states = states), class = "uneval_model")
-
 }
-
 
 
 # The following functions perform various calculations at model runtime.
 #------------------------------------------------------------------------#
-# Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
-CheckComplement <- function(tM) {
 
-    l <- sqrt(length(tM))
+CheckSquare <- function(root, states) {
+  if (!length(states) == root) {
+    stop("Transition matrix is not square of number of states")
+  }
+}
 
-    cmp.pos <- sapply(tM, function(x) x[1], simplify = TRUE)
+CheckComplement <- function(transition.matrix, l) {
+    # Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
 
-    # which(cmp.pos == quote(CMP))
-
+    cmp.pos <- sapply(transition.matrix, function(x) x[1], simplify = TRUE)
     cmp.pos <- cmp.pos == quote(CMP)
-
     dim(cmp.pos) <- c(l, l)
 
-    # Transpose cmp.pos because the dimensions are filled column wise
-    cmp.pos <- t(cmp.pos)
-
-    rowSums(cmp.pos, dims = 1)
-
-    if (!all(rowSums(cmp.pos) <= 1)) {
+    # Sum by columns because cmp.pos because is filled column-wise and so is tranposed
+    if (!all(colSums(cmp.pos) <= 1)) {
         stop("Only one 'CMP' is allowed per matrix row.")
-    } else {
-
-        return()
-    }
-    
+    } 
 }
 
 # Look up the mortality rate from vic.mortality
@@ -562,9 +541,9 @@ CreatePopulationMaster <- function() {
     #--------------------------------------------------
     # Male	  | 10	  |  2006 | AFG	 |  Casey  | 4	  |  NUMP =  { average of 3 census (2006,2011,2016) datasets } 
     # Female  |	12	  |  2007 |	IND	 |  Monash | 10	  |  NUMP =  { average of 2 census (2011,2016) datasets } 
-    # …	      | …	  |  …	  |  …	 |  …	   | …	  |  
+    # ?	      | ?	  |  ?	  |  ?	 |  ?	   | ?	  |  
     # Male	  | 30	  |  2016 |	VNM	 |  Hume   | 7	  |  NUMP =  { census 2016 datasets } 
-    # …	      | …	  |  …	  |  …	 |  …	   | …	  |
+    # ?	      | ?	  |  ?	  |  ?	 |  ?	   | ?	  |
     # ------------------2017---------------------------	No data for YARP 2017
     # Male	  | 50	  |  2018 |	?	 |  ?	   | 324  |	ABS migration projection with three assumptions (high, med & low ) by arrivals and departures
     # Female  |	40	  |  2027 |	?	 |  ?	   | 721  |	Net overseas migration levels will remain constant from YARP>2027 onwards
