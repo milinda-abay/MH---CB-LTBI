@@ -28,8 +28,7 @@ source("CB-TLTBI functions.R")
 # This function uses the above three Fix* functions. 
 # Run once to create the *.rds objects (vic.fertility, vic.mortality, vic.migration)
 # based on ABS's population porjection data
-#CreateRDSDataFiles()
-
+# CreateRDSDataFiles()
 
 # Read the data files (if required)
 aust <- readRDS("Data/aust.rds")
@@ -57,7 +56,7 @@ state.number <- length(state.names)
 # Sample commands demonstrating the functional argument list. 
 arglist.4R <- CreateArgumentList(state.names, state.number)
 
-# updates a row. Note: unevaluated parameter have to be wrapped in a quote()
+# updates a row. Note: unevaluated parameter must be wrapped in a quote()
 arglist.4R$update.row(1, c(quote(CMP), 1, 2, 3, 4, 5, 6, 7, 8, 9, quote(param$MR), 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21))
 arglist.4R$update.cell(2,2, quote(CMP))
 
@@ -68,7 +67,7 @@ arglist.4R$show.list()
 arglist.4R$add.state.name(state.names)
 
 # Drop the state name and reset the dimension.
-arglist.4R$drop.state.name()
+# arglist.4R$drop.state.name()
 
 # Save the argument list. 
 arglist.4R$save.list("arglist.4R")
@@ -77,7 +76,7 @@ arglist.4R$save.list("arglist.4R")
 arglist.4R$load.list("arglist.4R")
 
 # alternate method of calling DefineTransition
-transMatrix4R <- do.call(DefineTransition, arglist.4R$show.list())
+# transMatrix4R <- do.call(DefineTransition, arglist.4R$show.list())
 
 
 #CreateStates(state.names) # --- not used --- instantiates a set of states objects with default vaules
@@ -150,25 +149,25 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 pop.master <- CreatePopulationMaster()
 
 # Model parameters
-start.year <- 2016
+start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
-cycles <- 10 # Model run cycles
+cycles <- 7 # Model run cycles
 n_cohorts_to_evaluate <- nrow(pop.master) # Can be adjusted to save running time if you don't want to evaluate the entire population
 n_cohorts_to_evaluate <- 10
 
 # Creates and initialises the population output table for the model (markov.cycle = 0)
 # pop.output <- pop.master[YARP <= year & AGERP <= 40 & AGEP <= 40][, cycle := markov.cycle][1:100]
-pop.output <- pop.master[YARP <= year][, cycle := markov.cycle][1: n_cohorts_to_evaluate]
+pop.output <- pop.master[YARP == year][, cycle := markov.cycle][1: n_cohorts_to_evaluate] 
 
 # Toggle to reduce number of cohorts to evaluate to speed running time
 cohorts_to_track <- nrow(pop.output)
 #cohorts_to_track <- 1e4
   
 # TODO - If start.year != 2016 then recalculate AGEP at start.year!
-
+pop.output <- RunModel(pop.output)
 pop.output <- RunModel(pop.output[1: cohorts_to_track])
 
-# Saves output
-saveRDS(pop.output, "Data/pop.output.Baseline.rds")
+# Saves output, chage file name as required
+saveRDS(pop.output, "Data/S1.QTFGIT.4R.rds")
 

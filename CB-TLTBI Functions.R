@@ -267,10 +267,10 @@ RunModel <- function(pop.output) {
         
         # Inflows for next cycle. 
         # A conditional flag use this for testing.
-        modelinflow <- FALSE
+        modelinflow <- TRUE
 
         if (modelinflow == TRUE) {
-            pop.inflow <- pop.master[YARP == year,][, cycle := NA][1:10] # [1:10] due to testing
+            pop.inflow <- pop.master[YARP == year,][, cycle := NA]
         } else {
             pop.inflow <- NULL
         }
@@ -585,29 +585,33 @@ CreatePopulationMaster <- function() {
     pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2020, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2021, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2022, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2023, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2024, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027, NUMP, LTBP, AGERP, SEXP),]
 
     pop.master <- rbind(pop.master, pop.master.2017, pop.master.2018, pop.master.2019,
                         pop.master.2020, pop.master.2021, pop.master.2022, pop.master.2023,
-                        pop.master.2024, pop.master.2025)
+                        pop.master.2024, pop.master.2025, pop.master.2026, pop.master.2027)
 
     rm(pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
-       pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025)
+       pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025, pop.master.2026,
+       pop.master.2027)
 
     # Must order the pop.master table by YARP due to subsetting and recombining. 
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
 
-    # Remove australian born and calculates the susceptible and latent population
+    # Remove australian born and calculate the susceptible and latent population
     # TODO - Fix this! It is hard coded for 23 states.
     pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0)]
 
     # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
 
+    # Create a age at arrival column AGERP
     pop.master <- pop.master[, AGERP := AGEP-(2016-YARP)]
 
 }
@@ -617,7 +621,7 @@ CreatePopulationMaster <- function() {
 CreateStates <- function(state.names) {
 
     for (i in state.names) {
-        assign(i, pos = 1, DefineStates(cost = 234, untility = 1))
+        assign(i, pos = 1, DefineStates(cost = 234, utility = 1))
     }
 
 }
@@ -639,6 +643,4 @@ CreateStates <- function(state.names) {
 
 #state.value.matrix <- array(NA, dim = c(length(state.names), length(state.measures), cycles),
                             #dimnames = list(states = state.names, measures = state.measures, cycles = 1:cycles))
-
-
 
