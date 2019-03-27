@@ -31,15 +31,16 @@ source("CB-TLTBI functions.R")
 # CreateRDSDataFiles()
 
 # Read the data files (if required)
-aust <- readRDS("Data/aust.rds")
+
+# aust <- readRDS("Data/aust.rds")
 aust.LGA <- readRDS("Data/aust.LGA.rds") # this is required
-prob.Inf <- readRDS("Data/prob.Inf.rds") 
-tbhaz.200rep <- readRDS("Data/tbhaz.200rep.rds")
-tbhaz.5000rep <- readRDS("Data/tbhaz.5000rep.rds")
-vic.fertility <- readRDS("Data/vic.fertility.rds")
+# prob.Inf <- readRDS("Data/prob.Inf.rds") 
+# tbhaz.200rep <- readRDS("Data/tbhaz.200rep.rds")
+# tbhaz.5000rep <- readRDS("Data/tbhaz.5000rep.rds")
+# vic.fertility <- readRDS("Data/vic.fertility.rds")
 vic.mortality <- readRDS("Data/vic.mortality.rds") # this is also required
-vic.migration <- readRDS("Data/vic.migration.rds")
-vic.pop <- readRDS("Data/vic.pop.rds")
+# vic.migration <- readRDS("Data/vic.migration.rds")
+# vic.pop <- readRDS("Data/vic.pop.rds")
 RRates <- readRDS("Data/RRates.rds") # this is also required
 vic.tb.mortality <- readRDS("Data/vic.tb.mortality.rds") # this is also required
 
@@ -54,30 +55,34 @@ state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn"
 state.number <- length(state.names)
 
 # Sample commands demonstrating the functional argument list. 
-arglist.4R <- CreateArgumentList(state.names, state.number)
+# arglist <- CreateArgumentList(state.names, state.number)
 
 # updates a row. Note: unevaluated parameter must be wrapped in a quote()
-arglist.4R$update.row(1, c(quote(CMP), 1, 2, 3, 4, 5, 6, 7, 8, 9, quote(param$MR), 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21))
-arglist.4R$update.cell(2,2, quote(CMP))
+# arglist$update.row(9, c(0, 0, 0, 0, 0, 0, 0, 0, 0, quote(CMP), 0, 0, 0, 0, 0, 0, 0, 0, quote(param$TBMR), 0, 0, 0, quote(param$MR)))
+# arglist$update.list(listvalues) # For passing a entire list
+# arglist$update.cell(14, 6, 0.16) # update on cell
 
 # Show list with N x N state dimensions (note: column-wise layout)
-arglist.4R$show.list()
+# arglist$show.list() # aperm(arglist$show.list(), c(2,1))
 
 # Add the state names as the final argument
-arglist.4R$add.state.name(state.names)
+# arglist$add.state.name(state.names)
 
 # Drop the state name and reset the dimension.
-# arglist.4R$drop.state.name()
+# arglist$drop.state.name()
 
 # Save the argument list. 
-arglist.4R$save.list("arglist.4R")
+# arglist$save.list("BASELINE.TM")
 
 # Load the argument list
-arglist.4R$load.list("arglist.4R")
+# S1.TM.QTFGIT.4R
+# S1.TM.TST.4R
+# S2.TM.QTFGIT.4R
+# S2.TM.TST.4R
+arglist$load.list("BASELINE.TM")
 
-# alternate method of calling DefineTransition
-# transMatrix4R <- do.call(DefineTransition, arglist.4R$show.list())
-
+# alternate method of calling DefineTransition with loaded arglist
+transMatrix <- do.call(DefineTransition, arglist$show.list())
 
 #CreateStates(state.names) # --- not used --- instantiates a set of states objects with default vaules
 
@@ -148,26 +153,35 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 # Uses aust.LGA.rds file to create a sample input
 pop.master <- CreatePopulationMaster()
 
+
+# Run only for Strategy #1 population master 
+pop.master <- ModifyPop(pop.master, arglist)
+
+
+
 # Model parameters
 start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
 cycles <- 7 # Model run cycles
-n_cohorts_to_evaluate <- nrow(pop.master) # Can be adjusted to save running time if you don't want to evaluate the entire population
-n_cohorts_to_evaluate <- 10
+#n_cohorts_to_evaluate <- nrow(pop.master) # Can be adjusted to save running time if you don't want to evaluate the entire population
+#n_cohorts_to_evaluate <- 10
 
 # Creates and initialises the population output table for the model (markov.cycle = 0)
 # pop.output <- pop.master[YARP <= year & AGERP <= 40 & AGEP <= 40][, cycle := markov.cycle][1:100]
-pop.output <- pop.master[YARP == year][, cycle := markov.cycle][1: n_cohorts_to_evaluate] 
+pop.output <- pop.master[YARP == year][, cycle := markov.cycle] #[1: n_cohorts_to_evaluate] 
 
 # Toggle to reduce number of cohorts to evaluate to speed running time
-cohorts_to_track <- nrow(pop.output)
-#cohorts_to_track <- 1e4
+# cohorts_to_track <- nrow(pop.output)
+# cohorts_to_track <- 1e4
   
 # TODO - If start.year != 2016 then recalculate AGEP at start.year!
 pop.output <- RunModel(pop.output)
-pop.output <- RunModel(pop.output[1: cohorts_to_track])
+# pop.output <- RunModel(pop.output[1: cohorts_to_track])
 
 # Saves output, chage file name as required
-saveRDS(pop.output, "Data/S1.QTFGIT.4R.rds")
+saveRDS(pop.output, "Data/BASELINE.OUTPUT.rds")
+
+
+
 

@@ -57,7 +57,7 @@ CheckComplement <- function(transition.matrix, l) {
     cmp.pos <- cmp.pos == quote(CMP)
     dim(cmp.pos) <- c(l, l)
 
-    # Sum by columns because cmp.pos because is filled column-wise and so is tranposed
+    # Sum by columns because cmp.pos because is filled column-wise and so is transposed
     if (!all(colSums(cmp.pos) <= 1)) {
         stop("Only one 'CMP' is allowed per matrix row.")
     } 
@@ -72,6 +72,8 @@ CreateArgumentList <- function(state.names, state.number) {
 
     # Returns a list of functions and attaches it to the calling object.
     list(
+
+    update.list = function(listvalues) { arglist[] <<- listvalues },
 
     update.row = function(row, rowvalues) { #because it is column-wise
         arglist[,row] <<- rowvalues },
@@ -131,7 +133,7 @@ CalculateCMP <- function(tM, l, z) {
 
     dim(y) <- c(z, l, l)
 
-    # permutate the aray
+    # permutate the array
     y <- aperm(y, perm = c(1, 3, 2))
 
     # 3D logical array of -pi locations
@@ -616,6 +618,22 @@ CreatePopulationMaster <- function() {
 
 }
 
+
+ModifyPop <- function(pop.master,arglist) {
+
+    arglist$drop.state.name()
+    x <- aperm(arglist$show.list(), c(2,1))
+    
+
+    pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
+                      p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
+                      p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6,14]])]
+
+    pop.master[, c("p.sus", "p.ltbi") := 0]
+
+    pop.master
+    
+}
 
 # *** Not used at this point*** Creates a default set of states and values
 CreateStates <- function(state.names) {
