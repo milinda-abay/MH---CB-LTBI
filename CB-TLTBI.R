@@ -22,6 +22,7 @@ library(data.table) # required
 
 # Model setup located within this file.
 # It defines all the states, transition matrices, strategies, costs and parameters.
+source("CB-TLTBI_DataPreparation.R")
 source("CB-TLTBI functions.R")
 
 
