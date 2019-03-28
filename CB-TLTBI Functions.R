@@ -6,6 +6,7 @@
 
 
 DefineTransition <- function(..., state.names) {
+    # Define an unevaluated transmission matrix, for use in model running later
 
     # Extract transition matrix from first arguments, of any number, and assign names
     unevaluated.trasition.matrix <- lazyeval::lazy_dots(...)
@@ -15,7 +16,8 @@ DefineTransition <- function(..., state.names) {
     # Perform checks
     CheckSquare(n, state.names)
     CheckComplement(unevaluated.transition.matrix, n)
-    
+
+    # Define attributes of the unevaluated transmission matrix
     structure(unevaluated.transition.matrix, class = c("uneval_matrix", class(unevaluated.transition.matrix)), state.names = as.vector(state.names))
 }
 
