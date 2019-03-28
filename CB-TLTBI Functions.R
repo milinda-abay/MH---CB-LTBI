@@ -4,12 +4,6 @@
 # TODO - implement DefineStates & DefineStrategy
 # The Define* series of functions are used to setup the Model
 
-DefineStates <- function(...) {
-
-    .dots <- lazyeval::lazy_dots(...)
-    structure(.dots, class = c("state", class(.dots)))
-}
-
 
 DefineTransition <- function(..., state.names) {
 

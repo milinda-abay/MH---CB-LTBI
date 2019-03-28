@@ -1,4 +1,11 @@
 
+
+DefineStates <- function(...) {
+
+    .dots <- lazyeval::lazy_dots(...)
+    structure(.dots, class = c("state", class(.dots)))
+}
+
 # Utility functions for data cleansing and reshaping
 FixFertility <- function(hf, mf, lf) {
 
