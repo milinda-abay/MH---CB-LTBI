@@ -9,10 +9,10 @@ DefineTransition <- function(..., state.names) {
     # Define an unevaluated transmission matrix, for use in model running later
 
     # Extract transition matrix from first arguments, of any number, and assign names
-    unevaluated.trasition.matrix <- lazyeval::lazy_dots(...)
+    unevaluated.transition.matrix <- lazyeval::lazy_dots(...)
     n <- sqrt(length(unevaluated.transition.matrix))
     names(unevaluated.transition.matrix) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
-    
+
     # Perform checks
     CheckSquare(n, state.names)
     CheckComplement(unevaluated.transition.matrix, n)
@@ -23,17 +23,10 @@ DefineTransition <- function(..., state.names) {
 
 
 DefineParameters <- function(...) {
+    # Define an unevaluated parameters list, for use in model running later
 
-    .dots <- lazyeval::lazy_dots(...)
-    structure(.dots, class = c("uneval_parameters", class(.dots)))
-}
-
-
-DefineStrategy <- function(..., transition = DefineTransition()) {
-
-    .dots <- lazyeval::lazy_dots(...)
-    states <- structure(.dots, class = c("uneval_state_list", class(.dots)))
-    structure(list(transition = transition, states = states), class = "uneval_model")
+    unevaluated.parameter.list <- lazyeval::lazy_dots(...)
+    structure(unevaluated.parameter.list, class = c("uneval_parameters", class(unevaluated.parameter.list)))
 }
 
 
