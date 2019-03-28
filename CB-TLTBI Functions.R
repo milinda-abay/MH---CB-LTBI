@@ -38,15 +38,15 @@ CheckSquare <- function(root, states) {
     }
 }
 
-CheckComplement <- function(transition.matrix, l) {
+CheckComplement <- function(transition.matrix, dimension) {
     # Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
 
-    cmp.pos <- sapply(transition.matrix, function(x) x[1], simplify = TRUE)
-    cmp.pos <- cmp.pos == quote(CMP)
-    dim(cmp.pos) <- c(l, l)
+    cmp.positions <- sapply(transition.matrix, function(x) x[1], simplify = TRUE) # interested in expression only, not environment
+    cmp.positions <- cmp.positions == quote(CMP) # find the positions that are CMPs, converting to a logical vector
+    dim(cmp.positions) <- c(dimension, dimension) # reshape list to logical array
 
-    # Sum by columns because cmp.pos because is filled column-wise and so is transposed
-    if (!all(colSums(cmp.pos) <= 1)) {
+    # Sum by columns because cmp.positions because is filled column-wise and so is transposed
+    if (any(colSums(cmp.positions) > 1)) {
         stop("Only one 'CMP' is allowed per matrix row.")
     } 
 }
