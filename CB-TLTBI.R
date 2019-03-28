@@ -55,7 +55,7 @@ state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn"
 state.number <- length(state.names)
 
 # Sample commands demonstrating the functional argument list. 
-# arglist <- CreateArgumentList(state.names, state.number)
+arglist <- CreateArgumentList(state.names, state.number)
 
 # updates a row. Note: unevaluated parameter must be wrapped in a quote()
 # arglist$update.row(9, c(0, 0, 0, 0, 0, 0, 0, 0, 0, quote(CMP), 0, 0, 0, 0, 0, 0, 0, 0, quote(param$TBMR), 0, 0, 0, quote(param$MR)))
@@ -173,7 +173,7 @@ pop.output <- pop.master[YARP == year][, cycle := markov.cycle] #[1: n_cohorts_t
 
 # Toggle to reduce number of cohorts to evaluate to speed running time
 # cohorts_to_track <- nrow(pop.output)
-# cohorts_to_track <- 1e4
+cohorts_to_track <- 1e2
   
 # TODO - If start.year != 2016 then recalculate AGEP at start.year!
 pop.output <- RunModel(pop.output)
