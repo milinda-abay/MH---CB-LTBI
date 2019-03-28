@@ -1,21 +1,18 @@
 # The set of Define* functions implement lazy evaluation and create respective objects.
 # Ultimately a singular model object will have multiple strategies with multiple transition matrices and states.
 
-# TODO - implement DefineStates & DefineStrategy
-# The Define* series of functions are used to setup the Model
-
 
 DefineTransition <- function(..., state.names) {
     # Define an unevaluated transmission matrix, for use in model running later
 
     # Extract transition matrix from first arguments, of any number, and assign names
     unevaluated.transition.matrix <- lazyeval::lazy_dots(...)
-    n <- sqrt(length(unevaluated.transition.matrix))
-    names(unevaluated.transition.matrix) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
+    n.states <- sqrt(length(unevaluated.transition.matrix))
+    names(unevaluated.transition.matrix) <- sprintf("cell_%i_%i", rep(seq_len(n.states), each = n.states), rep(seq_len(n.states), n.states))
 
     # Perform checks
-    CheckSquare(n, state.names)
-    CheckComplement(unevaluated.transition.matrix, n)
+    CheckSquare(n.states, state.names)
+    CheckComplement(unevaluated.transition.matrix, n.states)
 
     # Define attributes of the unevaluated transmission matrix
     structure(unevaluated.transition.matrix, class = c("uneval_matrix", class(unevaluated.transition.matrix)), state.names = as.vector(state.names))
@@ -34,9 +31,11 @@ DefineParameters <- function(...) {
 #------------------------------------------------------------------------#
 
 CheckSquare <- function(root, states) {
-  if (!length(states) == root) {
-    stop("Transition matrix is not square of number of states")
-  }
+    # Simple function to ensure that the second argument's number of elements is the square of the first argument
+
+    if (!length(states) == root) {
+        stop("Transition matrix is not square of number of states")
+    }
 }
 
 CheckComplement <- function(transition.matrix, l) {
