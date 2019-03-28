@@ -17,11 +17,11 @@ DefineTransition <- function(..., state.names) {
     .dots <- lazyeval::lazy_dots(...)
     n <- sqrt(length(.dots))
     names(.dots) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
-    
+
     # Perform checks
     CheckSquare(n, state.names)
     CheckComplement(.dots, n)
-    
+
     structure(.dots, class = c("uneval_matrix", class(.dots)), state.names = as.vector(state.names))
 }
 
@@ -45,9 +45,9 @@ DefineStrategy <- function(..., transition = DefineTransition()) {
 #------------------------------------------------------------------------#
 
 CheckSquare <- function(root, states) {
-  if (!length(states) == root) {
-    stop("Transition matrix is not square of number of states")
-  }
+    if (!length(states) == root) {
+        stop("Transition matrix is not square of number of states")
+    }
 }
 
 CheckComplement <- function(transition.matrix, l) {
@@ -60,12 +60,12 @@ CheckComplement <- function(transition.matrix, l) {
     # Sum by columns because cmp.pos because is filled column-wise and so is transposed
     if (!all(colSums(cmp.pos) <= 1)) {
         stop("Only one 'CMP' is allowed per matrix row.")
-    } 
+    }
 }
 
 CreateArgumentList <- function(state.names, state.number) {
 
-    
+
     # Create and initialise a list
     arglist <- rep(list(NA), state.number ^ 2)
     dim(arglist) <- c(state.number, state.number)
@@ -75,8 +75,10 @@ CreateArgumentList <- function(state.names, state.number) {
 
     update.list = function(listvalues) { arglist[] <<- listvalues },
 
-    update.row = function(row, rowvalues) { #because it is column-wise
-        arglist[,row] <<- rowvalues },
+    update.row = function(row, rowvalues) {
+        #because it is column-wise
+        arglist[, row] <<- rowvalues
+    },
     update.cell = function(row, col, value) { arglist[[row, col]] <<- value },
     show.list = function() arglist,
     add.state.name = function(state.names) {
@@ -92,17 +94,17 @@ CreateArgumentList <- function(state.names, state.number) {
     save.list = function(list.name) {
         # TODO: need to figure out how to reference the calling object
         # or pass the object name as a parameter 
-        saveRDS(arglist, paste("Data/",list.name,".rds", sep = ""))
+        saveRDS(arglist, paste("Data/", list.name, ".rds", sep = ""))
     },
 
     load.list = function(list.name) {
-        arglist <<- readRDS(paste("Data/",list.name,".rds", sep = ""))
-        
+        arglist <<- readRDS(paste("Data/", list.name, ".rds", sep = ""))
+
     }
 
     )
 
-    
+
 }
 
 # Look up the mortality rate from vic.mortality
@@ -123,8 +125,28 @@ Get.RR <- function(DT, year) {
 Get.TBMR <- function(DT, year) {
 
     vic.tb.mortality[DT[, .(AGEP, SEXP)], rate, on = .(age = AGEP, sex = SEXP)]
+
+}
+
+
+Get.TEST <-  function(S) {
+    
+    as.numeric(tests.dt[tests == testing, ..S])
+      
+}
+
+Get.TREATR <- function() {
+
+    0.6818
     
 }
+
+Get.POP <- function() {
+
+    .6
+
+}
+
 
 # Calculates the CMP value after evaluation of the promise objects in parameter and transition matrix.
 CalculateCMP <- function(tM, l, z) {
@@ -177,7 +199,7 @@ PerformMatrixMultiplication <- function(dM, tM, l, z) {
     # Carry out the matrix multiplication with a data.table frame.
     # Enables iteration and subsetting by using .I
     dM[, as.list(matrix(bar[,, .I], ncol = l) %*% foo[,, .I]), by = seq_len(z)]
-    
+
 }
 
 
@@ -192,6 +214,12 @@ GetStateCounts <- function(DT, year) {
     parameters$MR$env <- environment()
     parameters$RR$env <- environment()
     parameters$TBMR$env <- environment()
+    parameters$TESTSN$env <- environment()
+    parameters$TESTSP$env <- environment()
+    parameters$TREATR$env <- environment()
+    parameters$POP$env <- environment()
+
+    
 
     # evaluate parameters 
     # NOTE: at this point both Get.MR() and Get.RR() functions are called by the evaluator.
@@ -203,7 +231,7 @@ GetStateCounts <- function(DT, year) {
     param$RR[is.na(param$RR)] <- 0.0013
     param$TBMR[is.na(param$TBMR)] <- 0.01
 
-    
+
     # assign the current environment for evaluation. 
     for (i in 1:length(transMatrix)) {
 
@@ -211,9 +239,12 @@ GetStateCounts <- function(DT, year) {
 
     }
 
+    
 
     # Evaluates the transition matrix and insert a '-pi' placeholder for CMP.
     tM <- lazy_eval(transMatrix, data = list(CMP = -pi))
+
+    
 
 
     # Scalar values don't get evaluated into vectors
@@ -233,7 +264,7 @@ GetStateCounts <- function(DT, year) {
     # Select the numeric state value columns in preparation for multiplication.
     dM <- DT[, ..state.names]
 
-    
+
 
     print("PMM Start")
     print(Sys.time())
@@ -258,7 +289,7 @@ RunModel <- function(pop.output) {
     while (markov.cycle != cycles) {
 
         print(nrow(pop.calculated))
-        print(pop.calculated[1:10,.N, by =.(AGEP,cycle)])
+        print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
 
         # The vectorised solution where the entire table is passed to GetStateCounts
         pop.calculated[, c(state.names) := GetStateCounts(pop.calculated, year)]
@@ -266,7 +297,7 @@ RunModel <- function(pop.output) {
         # Update counters
         markov.cycle <- markov.cycle + 1
         year <- year + 1
-        
+
         # Inflows for next cycle. 
         # A conditional flag use this for testing.
         modelinflow <- TRUE
@@ -276,21 +307,21 @@ RunModel <- function(pop.output) {
         } else {
             pop.inflow <- NULL
         }
-        
-        
+
+
         # Aging the population in the calculation object
         pop.calculated[, AGEP := AGEP + 1]
-        
+
         pop.calculated <- rbind(pop.calculated, pop.inflow)
         pop.calculated[, cycle := markov.cycle]
 
-        
+
         # Calculate state values
         # CalculateStateValues(pop.calculated)
 
         # Saving state in pop.output
         pop.output <- rbind(pop.output, pop.calculated)
-        
+
     }
 
     pop.output
@@ -542,7 +573,7 @@ CreateRDSDataFiles <- function() {
     vic.tb.mortality <- vic.tb.mortality[sex != "both"][, .(age, sex, rate = (died / total) / (2014 - 2002))]
     vic.tb.mortality[sex == "male", sex := "Mmale"]
     vic.tb.mortality[sex == "female", sex := "Female"]
-    saveRDS(vic.tb.mortality , "Data/vic.tb.mortality.rds")
+    saveRDS(vic.tb.mortality, "Data/vic.tb.mortality.rds")
 
 
 
@@ -609,30 +640,30 @@ CreatePopulationMaster <- function() {
 
     # Remove australian born and calculate the susceptible and latent population
     # TODO - Fix this! It is hard coded for 23 states.
-    pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0)]
+    pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
 
     # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
 
     # Create a age at arrival column AGERP
-    pop.master <- pop.master[, AGERP := AGEP-(2016-YARP)]
+    pop.master <- pop.master[, AGERP := AGEP - (2016 - YARP)]
 
 }
 
 
-ModifyPop <- function(pop.master,arglist) {
+ModifyPop <- function(pop.master, arglist) {
 
     arglist$drop.state.name()
-    x <- aperm(arglist$show.list(), c(2,1))
-    
+    x <- aperm(arglist$show.list(), c(2, 1))
+
 
     pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
                       p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
-                      p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6,14]])]
+                      p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
 
     pop.master[, c("p.sus", "p.ltbi") := 0]
 
     pop.master
-    
+
 }
 
 # *** Not used at this point*** Creates a default set of states and values
@@ -647,10 +678,10 @@ CreateStates <- function(state.names) {
 
 #strategy <- DefineStrategy(
 
-  #transition = transMatrix,
-  #p.sus = p.sus,
-  #p.death = p.death,
-  #p.ltbi = p.ltbi
+#transition = transMatrix,
+#p.sus = p.sus,
+#p.death = p.death,
+#p.ltbi = p.ltbi
 #)
 
 
@@ -660,5 +691,4 @@ CreateStates <- function(state.names) {
 #state.measures <- c("QALY", "Cost of TST", "Cost of IGRA", "Cost of 4R", "Cost of hospitalisation")
 
 #state.value.matrix <- array(NA, dim = c(length(state.names), length(state.measures), cycles),
-                            #dimnames = list(states = state.names, measures = state.measures, cycles = 1:cycles))
-
+#dimnames = list(states = state.names, measures = state.measures, cycles = 1:cycles))

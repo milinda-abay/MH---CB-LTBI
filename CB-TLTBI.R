@@ -54,32 +54,45 @@ state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn"
 # Number of states
 state.number <- length(state.names)
 
+
+# Create a sample data table of tests sensitivity & specificity
+tests.dt <- data.table(tests = c("QTFGIT", "TST5", "TST10", "TST15"), SN = c(0.5915, 0.80, 0.84, 0.80),
+    SP = c(0.93, 0.5011, 0.79, 0.87))
+
+# Create a sample treatment data table
+treatment.dt <- data.table(treatment = c("4R"), rate = c(.6818))
+    
+
+
 # Sample commands demonstrating the functional argument list. 
-# arglist <- CreateArgumentList(state.names, state.number)
+arglist <- CreateArgumentList(state.names, state.number)
 
 # updates a row. Note: unevaluated parameter must be wrapped in a quote()
 # arglist$update.row(9, c(0, 0, 0, 0, 0, 0, 0, 0, 0, quote(CMP), 0, 0, 0, 0, 0, 0, 0, 0, quote(param$TBMR), 0, 0, 0, quote(param$MR)))
 # arglist$update.list(listvalues) # For passing a entire list
-# arglist$update.cell(14, 6, 0.16) # update on cell
+# arglist$update.cell(14, 6, 0.6 * 0.20) # update on cell
 
 # Show list with N x N state dimensions (note: column-wise layout)
-# arglist$show.list() # aperm(arglist$show.list(), c(2,1))
+ arglist$show.list() # aperm(arglist$show.list(), c(2,1))
 
 # Add the state names as the final argument
-# arglist$add.state.name(state.names)
+ arglist$add.state.name(state.names)
 
 # Drop the state name and reset the dimension.
 # arglist$drop.state.name()
 
 # Save the argument list. 
-# arglist$save.list("BASELINE.TM")
+ arglist$save.list("S1.TM")
 
 # Load the argument list
 # S1.TM.QTFGIT.4R
-# S1.TM.TST.4R
+# S1.TM.TST10.4R
+# S1.TM.TST15.4R
 # S2.TM.QTFGIT.4R
-# S2.TM.TST.4R
-arglist$load.list("BASELINE.TM")
+# S2.TM.TST10.4R
+# S2.TM.TST15.4R
+arglist$load.list("S2.TM")
+
 
 # alternate method of calling DefineTransition with loaded arglist
 transMatrix <- do.call(DefineTransition, arglist$show.list())
@@ -89,12 +102,12 @@ transMatrix <- do.call(DefineTransition, arglist$show.list())
 # Creates an unevaluated transition matrix
 # Use 'CMP' for complement and 'param$*' for parameters.
 # Each parameter must be a pairlist argument in DefineParameters().
-transMatrix4R <- DefineTransition(CMP, 0.05 * 0.07 * 0.6818, 0.05 * 0.07 * 0.3182, 0, 0.05 * 0.93, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+transMatrix4R <- DefineTransition(CMP, param$POP * (1 - param$TESTSP) * param$TREATR, param$POP * (1 - param$TESTSP) * (1 - param$TREATR), 0, param$POP * param$TESTSP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
                                   0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
                                   0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
                                   0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
                                   0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-                                  0, 0, 0, 0, 0, CMP, 0.05 * 0.5915 * 0.6818, 0, 0, 0, .05 * 0.5915 * 0.3182, 0, 0, 0.05 * 0.4085, 0, 0, param$RR, 0, 0, 0, 0, 0, param$MR,
+                                  0, 0, 0, 0, 0, CMP, param$POP * param$TESTSN * param$TREATR, 0, 0, 0, param$POP * param$TESTSN * (1 - param$TREATR), 0, 0, param$POP * (1 - param$TESTSN), 0, 0, param$RR, 0, 0, 0, 0, 0, param$MR,
                                   0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
                                   0, 0, 0, 0, 0, 0, 0, CMP, 0.04 * param$RR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, param$TBMR, 0, 0, 0, param$MR,
@@ -114,7 +127,7 @@ transMatrix4R <- DefineTransition(CMP, 0.05 * 0.07 * 0.6818, 0.05 * 0.07 * 0.318
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, state.names = state.names)
 
 # Baseline transition matrix
-transMatrixBaseline <- DefineTransition(CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+transMatrixBaseline <- DefineTransition(CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, MR,
                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -147,19 +160,23 @@ transMatrix <- transMatrix4R
 # Creates an unevaluated set of parameters
 parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
                                RR = Get.RR(DT, year),
-                               TBMR = Get.TBMR(DT, year))
+                               TBMR = Get.TBMR(DT, year),
+                               TESTSN = Get.TEST(S="SN"),
+                               TESTSP = Get.TEST(S="SP"),
+                               TREATR = Get.TREATR(),
+                               POP = Get.POP()
+                               )
 
 
 # Uses aust.LGA.rds file to create a sample input
 pop.master <- CreatePopulationMaster()
 
-
 # Run only for Strategy #1 population master 
 pop.master <- ModifyPop(pop.master, arglist)
 
-
-
 # Model parameters
+testing <- "QTFGIT"
+treatment <- "4R"
 start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
@@ -180,8 +197,11 @@ pop.output <- RunModel(pop.output)
 # pop.output <- RunModel(pop.output[1: cohorts_to_track])
 
 # Saves output, chage file name as required
-saveRDS(pop.output, "Data/BASELINE.OUTPUT.rds")
+saveRDS(pop.output, "Data/S2.OUTPUT.test.rds")
 
 
 
 
+transMatrix[[2]]
+
+param$POP * (1 - param$TESTSP) * param$TREATR
