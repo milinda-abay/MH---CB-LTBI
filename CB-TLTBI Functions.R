@@ -33,7 +33,7 @@ DefineParameters <- function(...) {
 CheckSquare <- function(root, states) {
     # Simple function to ensure that the second argument's number of elements is the square of the first argument
 
-    if (!length(states) == root) {
+    if (length(states) != root) {
         stop("Transition matrix is not square of number of states")
     }
 }
