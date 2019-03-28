@@ -6,6 +6,101 @@ DefineStates <- function(...) {
     structure(.dots, class = c("state", class(.dots)))
 }
 
+# *** Not used at this point*** Creates a default set of states and values
+CreateStates <- function(state.names) {
+
+    for (i in state.names) {
+        assign(i, pos = 1, DefineStates(cost = 234, utility = 1))
+    }
+
+}
+
+# Creates a master migrant population table
+CreatePopulationMaster <- function() {
+
+    # Create a pop.master table merging census (2006,2011, 2016) and ABS projection data.
+    # It must be a long format table with the following structure.
+    #
+    # Sex of person (SEXP), Age at census (AGEP), Year of arrival (YARP),
+    # Birth place of person (ISO3), local government area (LGA),
+    # Number of persons	(NUMP)
+    #__________________________________________________
+    # SEXP    | AGEP  |  YARP | ISO3 |  LGA    | NUMP |
+    #--------------------------------------------------
+    # Male	  | 10	  |  2006 | AFG	 |  Casey  | 4	  |  NUMP =  { average of 3 census (2006,2011,2016) datasets } 
+    # Female  |	12	  |  2007 |	IND	 |  Monash | 10	  |  NUMP =  { average of 2 census (2011,2016) datasets } 
+    # ?	      | ?	  |  ?	  |  ?	 |  ?	   | ?	  |  
+    # Male	  | 30	  |  2016 |	VNM	 |  Hume   | 7	  |  NUMP =  { census 2016 datasets } 
+    # ?	      | ?	  |  ?	  |  ?	 |  ?	   | ?	  |
+    # ------------------2017---------------------------	No data for YARP 2017
+    # Male	  | 50	  |  2018 |	?	 |  ?	   | 324  |	ABS migration projection with three assumptions (high, med & low ) by arrivals and departures
+    # Female  |	40	  |  2027 |	?	 |  ?	   | 721  |	Net overseas migration levels will remain constant from YARP>2027 onwards
+    #						
+    # TODO -> Based on census datasets (2006,2011,2016) estimate a NUMP distribution for YARP > 2018  by LGA and ISO3.						
+    #
+    # As a validation exercise the aust.LGA cohort is duplicated into male & female and LGA aggregated
+    # This done to validate the model runtime. It must be fixed!
+
+    pop.master.male <- aust.LGA[, .(NUMP = .5 * sum(NUMP), LTBP = .5 * sum(LTBP), AGERP = AGEP - (2016 - YARP), SEXP = "Male"), by = c("AGEP", "ISO3", "YARP")]
+    pop.master.female <- pop.master.male[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP, SEXP = "Female")]
+
+    pop.master <- rbind(pop.master.male, pop.master.female)
+    rm(pop.master.female, pop.master.male)
+
+    # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017 to 2025.
+    # again this is for validating the model at runtime.
+
+    pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2020, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2021, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2022, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2023, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2024, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027, NUMP, LTBP, AGERP, SEXP),]
+
+    pop.master <- rbind(pop.master, pop.master.2017, pop.master.2018, pop.master.2019,
+                        pop.master.2020, pop.master.2021, pop.master.2022, pop.master.2023,
+                        pop.master.2024, pop.master.2025, pop.master.2026, pop.master.2027)
+
+    rm(pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
+       pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025, pop.master.2026,
+       pop.master.2027)
+
+    # Must order the pop.master table by YARP due to subsetting and recombining. 
+    setkey(pop.master, YARP, SEXP, AGEP, ISO3)
+
+    # Remove australian born and calculate the susceptible and latent population
+    # TODO - Fix this! It is hard coded for 23 states.
+    pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
+
+    # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
+
+    # Create a age at arrival column AGERP
+    pop.master <- pop.master[, AGERP := AGEP - (2016 - YARP)]
+
+}
+
+
+ModifyPop <- function(pop.master, arglist) {
+
+    arglist$drop.state.name()
+    x <- aperm(arglist$show.list(), c(2, 1))
+
+
+    pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
+                      p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
+                      p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
+
+    pop.master[, c("p.sus", "p.ltbi") := 0]
+
+    pop.master
+
+}
+
 # Utility functions for data cleansing and reshaping
 FixFertility <- function(hf, mf, lf) {
 
@@ -259,100 +354,7 @@ CreateRDSDataFiles <- function() {
 
 }
 
-# Creates a master migrant population table
-CreatePopulationMaster <- function() {
 
-    # Create a pop.master table merging census (2006,2011, 2016) and ABS projection data.
-    # It must be a long format table with the following structure.
-    #
-    # Sex of person (SEXP), Age at census (AGEP), Year of arrival (YARP),
-    # Birth place of person (ISO3), local government area (LGA),
-    # Number of persons	(NUMP)
-    #__________________________________________________
-    # SEXP    | AGEP  |  YARP | ISO3 |  LGA    | NUMP |
-    #--------------------------------------------------
-    # Male	  | 10	  |  2006 | AFG	 |  Casey  | 4	  |  NUMP =  { average of 3 census (2006,2011,2016) datasets } 
-    # Female  |	12	  |  2007 |	IND	 |  Monash | 10	  |  NUMP =  { average of 2 census (2011,2016) datasets } 
-    # ?	      | ?	  |  ?	  |  ?	 |  ?	   | ?	  |  
-    # Male	  | 30	  |  2016 |	VNM	 |  Hume   | 7	  |  NUMP =  { census 2016 datasets } 
-    # ?	      | ?	  |  ?	  |  ?	 |  ?	   | ?	  |
-    # ------------------2017---------------------------	No data for YARP 2017
-    # Male	  | 50	  |  2018 |	?	 |  ?	   | 324  |	ABS migration projection with three assumptions (high, med & low ) by arrivals and departures
-    # Female  |	40	  |  2027 |	?	 |  ?	   | 721  |	Net overseas migration levels will remain constant from YARP>2027 onwards
-    #						
-    # TODO -> Based on census datasets (2006,2011,2016) estimate a NUMP distribution for YARP > 2018  by LGA and ISO3.						
-    #
-    # As a validation exercise the aust.LGA cohort is duplicated into male & female and LGA aggregated
-    # This done to validate the model runtime. It must be fixed!
-
-    pop.master.male <- aust.LGA[, .(NUMP = .5 * sum(NUMP), LTBP = .5 * sum(LTBP), AGERP = AGEP - (2016 - YARP), SEXP = "Male"), by = c("AGEP", "ISO3", "YARP")]
-    pop.master.female <- pop.master.male[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP, SEXP = "Female")]
-
-    pop.master <- rbind(pop.master.male, pop.master.female)
-    rm(pop.master.female, pop.master.male)
-
-    # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017 to 2025.
-    # again this is for validating the model at runtime.
-
-    pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2020, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2021, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2022, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2023, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2024, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027, NUMP, LTBP, AGERP, SEXP),]
-
-    pop.master <- rbind(pop.master, pop.master.2017, pop.master.2018, pop.master.2019,
-                        pop.master.2020, pop.master.2021, pop.master.2022, pop.master.2023,
-                        pop.master.2024, pop.master.2025, pop.master.2026, pop.master.2027)
-
-    rm(pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
-       pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025, pop.master.2026,
-       pop.master.2027)
-
-    # Must order the pop.master table by YARP due to subsetting and recombining. 
-    setkey(pop.master, YARP, SEXP, AGEP, ISO3)
-
-    # Remove australian born and calculate the susceptible and latent population
-    # TODO - Fix this! It is hard coded for 23 states.
-    pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0)]
-
-    # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
-
-    # Create a age at arrival column AGERP
-    pop.master <- pop.master[, AGERP := AGEP-(2016-YARP)]
-
-}
-
-
-ModifyPop <- function(pop.master,arglist) {
-
-    arglist$drop.state.name()
-    x <- aperm(arglist$show.list(), c(2,1))
-    
-
-    pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
-                      p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
-                      p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6,14]])]
-
-    pop.master[, c("p.sus", "p.ltbi") := 0]
-
-    pop.master
-    
-}
-
-# *** Not used at this point*** Creates a default set of states and values
-CreateStates <- function(state.names) {
-
-    for (i in state.names) {
-        assign(i, pos = 1, DefineStates(cost = 234, utility = 1))
-    }
-
-}
 
 
 #strategy <- DefineStrategy(
