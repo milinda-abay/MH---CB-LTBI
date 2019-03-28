@@ -190,7 +190,7 @@ pop.output <- pop.master[YARP == year][, cycle := markov.cycle] #[1: n_cohorts_t
 
 # Toggle to reduce number of cohorts to evaluate to speed running time
 # cohorts_to_track <- nrow(pop.output)
-# cohorts_to_track <- 1e4
+cohorts_to_track <- 1e2
   
 # TODO - If start.year != 2016 then recalculate AGEP at start.year!
 pop.output <- RunModel(pop.output)
