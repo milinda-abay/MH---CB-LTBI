@@ -8,15 +8,15 @@
 DefineTransition <- function(..., state.names) {
 
     # Extract transition matrix from first arguments, of any number, and assign names
-    .dots <- lazyeval::lazy_dots(...)
-    n <- sqrt(length(.dots))
-    names(.dots) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
+    unevaluated.trasition.matrix <- lazyeval::lazy_dots(...)
+    n <- sqrt(length(unevaluated.transition.matrix))
+    names(unevaluated.transition.matrix) <- sprintf("cell_%i_%i", rep(seq_len(n), each = n), rep(seq_len(n), n))
     
     # Perform checks
     CheckSquare(n, state.names)
-    CheckComplement(.dots, n)
+    CheckComplement(unevaluated.transition.matrix, n)
     
-    structure(.dots, class = c("uneval_matrix", class(.dots)), state.names = as.vector(state.names))
+    structure(unevaluated.transition.matrix, class = c("uneval_matrix", class(unevaluated.transition.matrix)), state.names = as.vector(state.names))
 }
 
 
