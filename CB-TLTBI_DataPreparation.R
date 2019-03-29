@@ -75,8 +75,9 @@ CreatePopulationMaster <- function() {
 
     # Remove australian born and calculate the susceptible and latent population
     # TODO - Fix this! It is hard coded for 23 states.
+    pop.master <- pop.master[, cycle := as.integer(NA)]
     pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
-
+    pop.master <- pop.master[, c(paste("V.", state.names, sep = "")) := NA]
     # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
 
     # Create a age at arrival column AGERP

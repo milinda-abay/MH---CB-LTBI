@@ -109,7 +109,7 @@ Get.RR <- function(DT, year) {
 
 }
 
-
+# look up TB mortality rate
 Get.TBMR <- function(DT, year) {
 
     vic.tb.mortality[DT[, .(AGEP, SEXP)], rate, on = .(age = AGEP, sex = SEXP)]
@@ -117,18 +117,21 @@ Get.TBMR <- function(DT, year) {
 }
 
 
+# look up test sensitivity / specificity 
 Get.TEST <-  function(S) {
     
     as.numeric(tests.dt[tests == testing, ..S])
       
 }
 
+# look up treatment completion rate
 Get.TREATR <- function() {
 
     0.6818
     
 }
 
+# look up target population percentage
 Get.POP <- function() {
 
     .6
@@ -186,7 +189,12 @@ PerformMatrixMultiplication <- function(dM, tM, l, z) {
 
     # Carry out the matrix multiplication with a data.table frame.
     # Enables iteration and subsetting by using .I
-    dM[, as.list(matrix(bar[,, .I], ncol = l) %*% foo[,, .I]), by = seq_len(z)]
+    
+    flows <- dM[, as.list(bar[,, .I] %*% (foo[,, .I] - diag(diag(foo[,, .I])))), by = seq_len(z)]
+    
+    counts <- dM[, as.list(matrix(bar[,, .I], ncol = l) %*% foo[,, .I]), by = seq_len(z)]
+
+    return(list(counts,flows))
 
 }
 
@@ -207,8 +215,6 @@ GetStateCounts <- function(DT, year) {
     parameters$TREATR$env <- environment()
     parameters$POP$env <- environment()
 
-    
-
     # evaluate parameters 
     # NOTE: at this point both Get.MR() and Get.RR() functions are called by the evaluator.
     # Use param$* when using DefineTransition() 
@@ -219,7 +225,13 @@ GetStateCounts <- function(DT, year) {
     param$RR[is.na(param$RR)] <- 0.0013
     param$TBMR[is.na(param$TBMR)] <- 0.01
 
+    # TODO (Milinda) - extract param$* and re assign to variables of same name.
+    # As a result we can stop using param$ inside DefineTransition().
+    #for (i in names(param)) {
+        #assign(i, param[[i]])
+    #}
 
+    
     # assign the current environment for evaluation. 
     for (i in 1:length(transMatrix)) {
 
@@ -227,14 +239,10 @@ GetStateCounts <- function(DT, year) {
 
     }
 
-    
-
     # Evaluates the transition matrix and insert a '-pi' placeholder for CMP.
     tM <- lazy_eval(transMatrix, data = list(CMP = -pi))
 
     
-
-
     # Scalar values don't get evaluated into vectors
     # loop and manually expand to vectors
     for (i in 1:length(transMatrix)) {
@@ -253,16 +261,22 @@ GetStateCounts <- function(DT, year) {
     dM <- DT[, ..state.names]
 
 
-
     print("PMM Start")
     print(Sys.time())
     results <- PerformMatrixMultiplication(dM, tM, l, z)
     print("PMM End")
     print(Sys.time())
 
-    #browser() # uncomment for testing
+    results[[1]] <- results[[1]][, - c("seq_len")]
+    results[[2]] <- results[[2]][, - c("seq_len")]
 
-    results[, - c("seq_len")]
+    names(results[[2]]) <- paste("V.", state.names, sep = "")
+
+    # browser() # uncomment for testing
+
+    results <- cbind(results[[1]], results[[2]])
+
+
 
 }
 
@@ -280,7 +294,7 @@ RunModel <- function(pop.output) {
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
 
         # The vectorised solution where the entire table is passed to GetStateCounts
-        pop.calculated[, c(state.names) := GetStateCounts(pop.calculated, year)]
+        pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year)]
 
         # Update counters
         markov.cycle <- markov.cycle + 1
@@ -309,6 +323,9 @@ RunModel <- function(pop.output) {
 
         # Saving state in pop.output
         pop.output <- rbind(pop.output, pop.calculated)
+        
+
+
 
     }
 
