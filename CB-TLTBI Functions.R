@@ -297,10 +297,10 @@ RunModel <- function(pop.output) {
         writeLines(sprintf("\nCommencing Markov cycle %i", markov.cycle))
         writeLines(sprintf("Current number of populations in the working matrix is %i", nrow(pop.calculated)))
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
-
+        
         # The vectorised solution where the entire table is passed to GetStateCounts
         pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year)]
-
+        
         # Update counters
         markov.cycle <- markov.cycle + 1
         year <- year + 1
@@ -309,10 +309,11 @@ RunModel <- function(pop.output) {
         # A conditional flag use this for testing.
         modelinflow <- TRUE
 
-        if (modelinflow == TRUE) {
+        if (modelinflow) {
             pop.inflow <- pop.master[YARP == year,][, cycle := NA]
-        } else {
-            pop.inflow <- NULL
+        } 
+        else {
+            pop.inflow <- NULL # not convinced this is needed
         }
 
 
