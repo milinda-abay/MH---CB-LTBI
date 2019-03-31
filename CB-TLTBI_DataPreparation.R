@@ -61,14 +61,19 @@ CreatePopulationMaster <- function() {
     pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2028 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2028, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2029 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2029, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2030 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2030, NUMP, LTBP, AGERP, SEXP),]
+
 
     pop.master <- rbind(pop.master, pop.master.2017, pop.master.2018, pop.master.2019,
                         pop.master.2020, pop.master.2021, pop.master.2022, pop.master.2023,
-                        pop.master.2024, pop.master.2025, pop.master.2026, pop.master.2027)
+                        pop.master.2024, pop.master.2025, pop.master.2026, pop.master.2027,
+                        pop.master.2028, pop.master.2029, pop.master.2030)
 
     rm(pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
        pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025, pop.master.2026,
-       pop.master.2027)
+       pop.master.2027, pop.master.2028, pop.master.2029, pop.master.2030)
 
     # Must order the pop.master table by YARP due to subsetting and recombining. 
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
@@ -81,6 +86,7 @@ CreatePopulationMaster <- function() {
     # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
 
     # Create a age at arrival column AGERP
+    # Not correct for YARP after 2016.
     pop.master <- pop.master[, AGERP := AGEP - (2016 - YARP)]
 
 }
