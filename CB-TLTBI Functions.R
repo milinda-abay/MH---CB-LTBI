@@ -15,7 +15,7 @@ DefineTransition <- function(..., state.names) {
 
     # Perform checks
     if (length(state.names) != n.expected.states) {
-      stop("Transition matrix is not square of number of states")
+      stop("Transition matrix is not the square of the number of states")
     }
     CheckComplement(unevaluated.transition.matrix, n.expected.states)
 
@@ -40,13 +40,18 @@ DefineParameters <- function(...) {
 CheckComplement <- function(transition.matrix, dimension) {
     # Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
 
-    cmp.positions <- sapply(transition.matrix, function(x) x[1], simplify = TRUE) # interested in expression only, not environment
-    cmp.positions <- cmp.positions == quote(CMP) # find the positions that are CMPs, converting to a logical vector
-    dim(cmp.positions) <- c(dimension, dimension) # reshape list to logical array
+    # Interested in expression only, so disregard the environment (which is the second element)
+    cmp.positions <- sapply(transition.matrix, function(x) x[1], simplify = TRUE)
+    
+    # Find the positions that are CMPs, converting to a logical vector
+    cmp.positions <- cmp.positions == quote(CMP)
+    
+    # Reshape from list to array
+    dim(cmp.positions) <- c(dimension, dimension)
 
     # Sum by columns because cmp.positions because is filled column-wise and so is transposed
     if (any(colSums(cmp.positions) > 1)) {
-        stop("Only one 'CMP' is allowed per matrix row.")
+        stop("Only a maximum of one 'CMP' is allowed per matrix row.")
     }
 }
 
@@ -287,8 +292,9 @@ RunModel <- function(pop.output) {
     # initialise the calculation object
     pop.calculated <- copy(pop.output)
 
-    while (markov.cycle != cycles) {
+    while (markov.cycle < cycles) {
 
+        # report the size of the output matrix
         print(nrow(pop.calculated))
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
 
@@ -322,12 +328,7 @@ RunModel <- function(pop.output) {
 
         # Saving state in pop.output
         pop.output <- rbind(pop.output, pop.calculated)
-        
-
-
-
     }
-
     pop.output
 }
 
