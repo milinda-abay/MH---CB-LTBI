@@ -294,8 +294,8 @@ RunModel <- function(pop.output) {
 
     while (markov.cycle < cycles) {
 
-        # report the size of the output matrix
-        print(nrow(pop.calculated))
+        writeLines(sprintf("\nCommencing Markov cycle %i", markov.cycle))
+        writeLines(sprintf("Current number of populations in the working matrix is %i", nrow(pop.calculated)))
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
 
         # The vectorised solution where the entire table is passed to GetStateCounts
