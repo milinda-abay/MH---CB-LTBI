@@ -7,15 +7,22 @@ DefineTransition <- function(..., state.names) {
 
     # Extract transition matrix from first arguments, of any number, and assign names
     unevaluated.transition.matrix <- lazyeval::lazy_dots(...)
-    n.states <- sqrt(length(unevaluated.transition.matrix))
-    names(unevaluated.transition.matrix) <- sprintf("cell_%i_%i", rep(seq_len(n.states), each = n.states), rep(seq_len(n.states), n.states))
+    n.expected.states <- sqrt(length(unevaluated.transition.matrix))
+    names(unevaluated.transition.matrix) <- 
+      sprintf("cell_%i_%i",
+              rep(seq_len(n.expected.states), each = n.expected.states), 
+              rep(seq_len(n.expected.states), n.expected.states))
 
     # Perform checks
-    CheckSquare(n.states, state.names)
-    CheckComplement(unevaluated.transition.matrix, n.states)
+    if (length(state.names) != n.expected.states) {
+      stop("Transition matrix is not square of number of states")
+    }
+    CheckComplement(unevaluated.transition.matrix, n.expected.states)
 
     # Define attributes of the unevaluated transmission matrix
-    structure(unevaluated.transition.matrix, class = c("uneval_matrix", class(unevaluated.transition.matrix)), state.names = as.vector(state.names))
+    structure(unevaluated.transition.matrix,
+              class = c("uneval_matrix", class(unevaluated.transition.matrix)),
+              state.names = as.vector(state.names))
 }
 
 
@@ -29,14 +36,6 @@ DefineParameters <- function(...) {
 
 # The following functions perform various calculations at model runtime.
 #------------------------------------------------------------------------#
-
-CheckSquare <- function(root, states) {
-    # Simple function to ensure that the second argument's number of elements is the square of the first argument
-
-    if (length(states) != root) {
-        stop("Transition matrix is not square of number of states")
-    }
-}
 
 CheckComplement <- function(transition.matrix, dimension) {
     # Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
