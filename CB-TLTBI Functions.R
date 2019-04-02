@@ -8,14 +8,14 @@ DefineTransition <- function(..., state.names) {
     # Extract transition matrix from first arguments, of any number, and assign names
     unevaluated.transition.matrix <- lazyeval::lazy_dots(...)
     n.expected.states <- sqrt(length(unevaluated.transition.matrix))
-    names(unevaluated.transition.matrix) <- 
+    names(unevaluated.transition.matrix) <-
       sprintf("cell_%i_%i",
-              rep(seq_len(n.expected.states), each = n.expected.states), 
+              rep(seq_len(n.expected.states), each = n.expected.states),
               rep(seq_len(n.expected.states), n.expected.states))
 
     # Perform checks
     if (length(state.names) != n.expected.states) {
-      stop("Transition matrix is not the square of the number of states")
+        stop("Transition matrix is not the square of the number of states")
     }
     CheckComplement(unevaluated.transition.matrix, n.expected.states)
 
@@ -42,10 +42,10 @@ CheckComplement <- function(transition.matrix, dimension) {
 
     # Interested in expression only, so disregard the environment (which is the second element)
     cmp.positions <- sapply(transition.matrix, function(x) x[1], simplify = TRUE)
-    
+
     # Find the positions that are CMPs, converting to a logical vector
     cmp.positions <- cmp.positions == quote(CMP)
-    
+
     # Reshape from list to array
     dim(cmp.positions) <- c(dimension, dimension)
 
@@ -57,7 +57,7 @@ CheckComplement <- function(transition.matrix, dimension) {
 
 CreateArgumentList <- function(state.names, state.number) {
 
-    
+
     # Create and initialise a list
     arglist <- rep(list(NA), state.number ^ 2)
     dim(arglist) <- c(state.number, state.number)
@@ -122,17 +122,17 @@ Get.TBMR <- function(DT, year) {
 
 
 # look up test sensitivity / specificity 
-Get.TEST <-  function(S) {
-    
+Get.TEST <- function(S) {
+
     as.numeric(tests.dt[tests == testing, ..S])
-      
+
 }
 
 # look up treatment completion rate
 Get.TREATR <- function() {
 
     0.6818
-    
+
 }
 
 # look up target population percentage
@@ -193,12 +193,12 @@ PerformMatrixMultiplication <- function(dM, tM, l, z) {
 
     # Carry out the matrix multiplication with a data.table frame.
     # Enables iteration and subsetting by using .I
-    
+
     flows <- dM[, as.list(bar[,, .I] %*% (foo[,, .I] - diag(diag(foo[,, .I])))), by = seq_len(z)]
-    
+
     counts <- dM[, as.list(matrix(bar[,, .I], ncol = l) %*% foo[,, .I]), by = seq_len(z)]
 
-    return(list(counts,flows))
+    return(list(counts, flows))
 
 }
 
@@ -232,10 +232,10 @@ GetStateCounts <- function(DT, year) {
     # TODO (Milinda) - extract param$* and re assign to variables of same name.
     # As a result we can stop using param$ inside DefineTransition().
     #for (i in names(param)) {
-        #assign(i, param[[i]])
+    #assign(i, param[[i]])
     #}
 
-    
+
     # assign the current environment for evaluation. 
     for (i in 1:length(transMatrix)) {
 
@@ -246,7 +246,7 @@ GetStateCounts <- function(DT, year) {
     # Evaluates the transition matrix and insert a '-pi' placeholder for CMP.
     tM <- lazy_eval(transMatrix, data = list(CMP = -pi))
 
-    
+
     # Scalar values don't get evaluated into vectors
     # loop and manually expand to vectors
     for (i in 1:length(transMatrix)) {
@@ -297,10 +297,10 @@ RunModel <- function(pop.output) {
         writeLines(sprintf("\nCommencing Markov cycle %i", markov.cycle))
         writeLines(sprintf("Current number of populations in the working matrix is %i", nrow(pop.calculated)))
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
-        
+
         # The vectorised solution where the entire table is passed to GetStateCounts
         pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year)]
-        
+
         # Update counters
         markov.cycle <- markov.cycle + 1
         year <- year + 1
@@ -311,7 +311,7 @@ RunModel <- function(pop.output) {
 
         if (modelinflow) {
             pop.inflow <- pop.master[YARP == year,][, cycle := NA]
-        } 
+        }
         else {
             pop.inflow <- NULL # not convinced this is needed
         }
@@ -332,4 +332,3 @@ RunModel <- function(pop.output) {
     }
     pop.output
 }
-

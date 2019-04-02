@@ -91,11 +91,20 @@ arglist <- CreateArgumentList(state.names, state.number)
 # S1.TM.TST10.4R
 # S1.TM.TST15.4R
 # S2.TM
-arglist$load.list("S2.TM")
+# BASELINE.TM
 
+arglist.S1.TM.QTFGIT.4R <- arglist$load.list("S1.TM.QTFGIT.4R")
+arglist.S1.TM.TST10.4R <- arglist$load.list("S1.TM.TST10.4R")
+arglist.S1.TM.TST15.4R <- arglist$load.list("S1.TM.TST15.4R")
+arglist.S2.TM <- arglist$load.list("S2.TM")
+arglist.BASELINE.TM <- arglist$load.list("BASELINE.TM")
 
 # alternate method of calling DefineTransition with loaded arglist
 transMatrix <- do.call(DefineTransition, arglist$show.list())
+
+
+
+
 
 #CreateStates(state.names) # --- not used --- instantiates a set of states objects with default vaules
 
@@ -172,7 +181,7 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 pop.master <- CreatePopulationMaster()
 
 # Run only for Strategy #1 population master 
-# pop.master <- ModifyPop(pop.master, arglist)
+ pop.master <- ModifyPop(pop.master, arglist)
 
 # Model parameters
 testing <- "TST15"
@@ -180,7 +189,7 @@ treatment <- "4R"
 start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
-cycles <- 7 # Model run cycles
+cycles <- 10 # Model run cycles
 #n_cohorts_to_evaluate <- nrow(pop.master) # Can be adjusted to save running time if you don't want to evaluate the entire population
 #n_cohorts_to_evaluate <- 10
 
@@ -198,6 +207,6 @@ pop.output <- RunModel(pop.output)
 # pop.output <- RunModel(pop.output[1: cohorts_to_track])
 
 # Saves output, chage file name as required
-saveRDS(pop.output, "Data/S2.TST15.4R.rds")
+saveRDS(pop.output, "Data/S1.TST15.4R.rds")
 
 
