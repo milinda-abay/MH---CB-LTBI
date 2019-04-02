@@ -161,10 +161,6 @@ transMatrix <- do.call(DefineTransition, arglist$show.list())
                                         #0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
                                         #state.names = state.names)
 
-# Depending on which model to run
-# transMatrix <- transMatrix4R
-# transMatrix <- transMatrixBaseline
-
 
 # Creates an unevaluated set of parameters
 parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
