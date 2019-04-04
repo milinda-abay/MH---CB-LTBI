@@ -352,8 +352,8 @@ CreateRDSDataFiles <- function() {
 
     # Create and save TB mortality rates
     vic.tb.mortality <- fread("Data/TBmortality_VIC_2002_2013.csv")
-    vic.tb.mortality <- vic.tb.mortality[sex != "both"][, .(age, sex, rate = (died / total) / (2014 - 2002))]
-    vic.tb.mortality[sex == "male", sex := "Mmale"]
+    vic.tb.mortality <- vic.tb.mortality[sex != "both"][, .(age, sex, rate = (died / total))]
+    vic.tb.mortality[sex == "male", sex := "Male"]
     vic.tb.mortality[sex == "female", sex := "Female"]
     saveRDS(vic.tb.mortality , "Data/vic.tb.mortality.rds")
            
