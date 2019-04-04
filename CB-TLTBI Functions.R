@@ -259,6 +259,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment) {
     treatment
     transMatrix <- strategy$transition
     
+
     z <- nrow(DT)
     l <- sqrt(length(strategy$transition))
 
