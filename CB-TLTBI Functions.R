@@ -33,6 +33,30 @@ DefineParameters <- function(...) {
     structure(unevaluated.parameter.list, class = c("uneval_parameters", class(unevaluated.parameter.list)))
 }
 
+DefineStates <- function(...) {
+
+    state.values <- lazyeval::lazy_dots(...)
+    structure(state.values, class = c("state", class(state.values)))
+
+}
+
+
+DefineStrategy <- function(..., transition.matrix) {
+    # TODO - find a way to pass the state.names vector and create the state objects
+    # using CreateStates and DefineStates.
+    # Have a list of named states per state.names
+
+    state.list <- list(...)
+    states <- structure(state.list, class = c("uneval_state_list", class(state.list)))
+    names(states) <- state.names
+    structure(list(transition = transition.matrix, states = states),
+              class = "uneval_model")
+
+}
+
+
+
+
 
 # The following functions perform various calculations at model runtime.
 #------------------------------------------------------------------------#
@@ -62,7 +86,7 @@ CreateArgumentList <- function(state.names, state.number) {
     arglist <- rep(list(NA), state.number ^ 2)
     dim(arglist) <- c(state.number, state.number)
 
-    # Returns a list of functions and attaches it to the calling object.
+    # Return a list of functions attached to the calling object.
     list(
 
     update.list = function(listvalues) { arglist[] <<- listvalues },
@@ -122,25 +146,49 @@ Get.TBMR <- function(DT, year) {
 
 
 # look up test sensitivity / specificity 
-Get.TEST <- function(S) {
+Get.TEST <- function(S,testing) {
 
     as.numeric(tests.dt[tests == testing, ..S])
 
 }
 
 # look up treatment completion rate
-Get.TREATR <- function() {
+Get.TREATR <- function(treatment) {
 
-    0.6818
+    0.6818 # for 4R
 
 }
 
 # look up target population percentage
 Get.POP <- function() {
 
-    .6
+    .6 # only for strategy 2
 
 }
+
+
+Get.UTILITY <- function() {
+
+    as.list(utility.dt)
+
+}
+
+
+Get.DISCOUNT <- function() {
+
+    .03
+
+}
+
+
+Get.Cost <- function() {
+
+
+
+
+}
+
+
 
 
 # Calculates the CMP value after evaluation of the promise objects in parameter and transition matrix.
@@ -203,11 +251,18 @@ PerformMatrixMultiplication <- function(dM, tM, l, z) {
 }
 
 
-# The primary function RunModel() calls to performs row by row transition calculations.
-GetStateCounts <- function(DT, year) {
+# The primary function RunModel() calls to perform row by row transition calculations.
+GetStateCounts <- function(DT, year, strategy, testing, treatment) {
 
+    # collapsing the promise object 
+    testing
+    treatment
+    transMatrix <- strategy$transition
+    
     z <- nrow(DT)
-    l <- sqrt(length(transMatrix))
+    l <- sqrt(length(strategy$transition))
+
+    
 
     # assign the current environment for evaluation. 
     # TODO - create a function for multiple parameters
@@ -218,11 +273,18 @@ GetStateCounts <- function(DT, year) {
     parameters$TESTSP$env <- environment()
     parameters$TREATR$env <- environment()
     parameters$POP$env <- environment()
+    parameters$COST$env <- environment()
+    parameters$UTILITY$env <- environment()
+    parameters$DISCOUNT$env <- environment()
 
+    
+       
     # evaluate parameters 
     # NOTE: at this point both Get.MR() and Get.RR() functions are called by the evaluator.
     # Use param$* when using DefineTransition() 
     param <- lazy_eval(parameters)
+
+    
 
     # a Hack for YARP < 2016, vic mortality doesnt have data to look up 
     param$MR[is.na(param$MR)] <- 0.01
@@ -235,7 +297,7 @@ GetStateCounts <- function(DT, year) {
     #assign(i, param[[i]])
     #}
 
-
+    
     # assign the current environment for evaluation. 
     for (i in 1:length(transMatrix)) {
 
@@ -257,7 +319,6 @@ GetStateCounts <- function(DT, year) {
         }
     }
 
-
     # Manipulates the tM to calculate the CMP
     tM <- CalculateCMP(tM, l, z)
 
@@ -274,9 +335,14 @@ GetStateCounts <- function(DT, year) {
     results[[1]] <- results[[1]][, - c("seq_len")]
     results[[2]] <- results[[2]][, - c("seq_len")]
 
+    # CalculateHealthEconomics(DT,results,year)
+
     names(results[[2]]) <- paste("V.", state.names, sep = "")
 
     # browser() # uncomment for testing
+
+
+
 
     results <- cbind(results[[1]], results[[2]])
 
@@ -287,10 +353,13 @@ GetStateCounts <- function(DT, year) {
 #------------------------------------------------------------------------#
 
 # The main model runtime loop 
-RunModel <- function(pop.output) {
+RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycles) {
 
     # initialise the calculation object
     pop.calculated <- copy(pop.output)
+
+    year <- start.year # Initialise year with start.year
+    markov.cycle <- 0 # Tracks the current cycle
 
     while (markov.cycle < cycles) {
 
@@ -299,7 +368,7 @@ RunModel <- function(pop.output) {
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
 
         # The vectorised solution where the entire table is passed to GetStateCounts
-        pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year)]
+        pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year, strategy, testing, treatment)]
 
         # Update counters
         markov.cycle <- markov.cycle + 1

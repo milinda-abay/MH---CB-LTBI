@@ -1,16 +1,11 @@
 
 
-DefineStates <- function(...) {
-
-    .dots <- lazyeval::lazy_dots(...)
-    structure(.dots, class = c("state", class(.dots)))
-}
 
 # *** Not used at this point*** Creates a default set of states and values
 CreateStates <- function(state.names) {
 
     for (i in state.names) {
-        assign(i, pos = 1, DefineStates(cost = 234, utility = 1))
+        assign(i, pos = 1, DefineStates(cost = COST, utility = UTILITY))
     }
 
 }
@@ -108,184 +103,10 @@ ModifyPop <- function(pop.master, arglist) {
 
 }
 
-# Utility functions for data cleansing and reshaping
-FixFertility <- function(hf, mf, lf) {
-
-    # Prepares the fertility data into a data.table.
-
-    # Args: 
-    #   hf: a data.table of high fertility rates.
-    #   mf: a data.table of medium fertility rates.
-    #   lf: a data.table of low fertility rates.
-    #
-    # Return:
-    #   a data.table with age, year, rate and fertility as columns.
-
-    names(hf) <- c("Age", 2017:2027)
-    names(mf) <- c("Age", 2017:2027)
-    names(lf) <- c("Age", 2017:2027)
-
-    hf.firstrow <- which(hf$"2017" == "Victoria") + 2
-    hf.lastrow <- which(hf$"2017" == "Queensland") - 4
-
-    mf.firstrow <- which(mf$"2017" == "Victoria") + 2
-    mf.lastrow <- which(mf$"2017" == "Queensland") - 4
-
-    lf.firstrow <- which(lf$"2017" == "Victoria") + 2
-    lf.lastrow <- which(lf$"2017" == "Queensland") - 4
-
-    hf <- hf[hf.firstrow:hf.lastrow,,]
-    mf <- mf[mf.firstrow:mf.lastrow,,]
-    lf <- lf[lf.firstrow:lf.lastrow,,]
-
-    hf$"2017" <- as.numeric(hf$"2017")
-    mf$"2017" <- as.numeric(mf$"2017")
-    lf$"2017" <- as.numeric(lf$"2017")
-
-    hf$Age <- as.integer(hf$Age)
-    mf$Age <- as.integer(mf$Age)
-    lf$Age <- as.integer(lf$Age)
-
-    hf <- melt(hf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
-    mf <- melt(mf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
-    lf <- melt(lf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
-
-    hf$Year <- as.integer(hf$Year)
-    mf$Year <- as.integer(mf$Year)
-    lf$Year <- as.integer(lf$Year)
-
-    hf[, frate := .("High"),]
-    mf[, frate := .("Med"),]
-    lf[, frate := .("Low"),]
 
 
 
-    return(rbind(hf, mf, lf))
 
-}
-
-FixMortality <- function(hm, mm) {
-
-    # Prepares the mortality data into a table.
-
-    # Args: 
-    #   hm: a data.table of high mortality rates
-    #   mm: a data.table of medium mortality rates
-
-    # Return:
-    #   a data.table with age, year, proportion and mortality as dimensions.
-
-    hm <- hm[7:nrow(hm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-    mm <- mm[7:nrow(mm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-
-    names(hm) <- c("Year", "Age", "Male", "Female")
-    names(mm) <- c("Year", "Age", "Male", "Female")
-
-    hm$Age <- as.integer(hm$Age)
-    mm$Age <- as.integer(mm$Age)
-
-
-    hm <- melt(hm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-    mm <- melt(mm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-
-    hm$Year <- as.integer(hm$Year)
-    mm$Year <- as.integer(mm$Year)
-
-    hm$Rate <- as.numeric(hm$Rate)
-    mm$Rate <- as.numeric(mm$Rate)
-
-    hm[, mrate := .("High"),]
-    mm[, mrate := .("Med"),]
-
-
-    return(rbind(hm, mm))
-
-}
-
-FixMigration <- function(hma, hmd, mma, mmd, lma, lmd) {
-
-    # Prepares the migration data into an table.
-
-    # Args: 
-    #   hma: a data.table of high migration arrival rates
-    #   hmd: a data.table of high migration departure rates
-    #   mma: a data.table of medium migration arrival rates
-    #   mmd: a data.table of medium migration departure rates
-    #   lma: a data.table of high migration arrival rates
-    #   lmd: a data.table of high migration departure rates
-
-    # Return:
-    #   a data.table with age, year, proportion and mortality as dimensions.
-
-    #hma <- vic.high.migration.arrivals
-    #hmd <- vic.high.migration.departures
-    #mma <- vic.medium.migration.arrivals
-    #mmd <- vic.medium.migration.departures
-    #lma <- vic.low.migration.arrivals
-    #lmd <- vic.low.migration.departures
-
-    hma <- hma[8:nrow(hma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-    hmd <- hmd[8:nrow(hmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-
-    mma <- hma[8:nrow(mma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-    mmd <- mmd[8:nrow(mmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-
-    lma <- lma[8:nrow(lma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-    lmd <- lmd[8:nrow(lmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-
-    names(hma) <- c("Year", "Age", "Male", "Female")
-    names(hmd) <- c("Year", "Age", "Male", "Female")
-    names(mma) <- c("Year", "Age", "Male", "Female")
-    names(mmd) <- c("Year", "Age", "Male", "Female")
-    names(lma) <- c("Year", "Age", "Male", "Female")
-    names(lmd) <- c("Year", "Age", "Male", "Female")
-
-    hma$Age <- as.integer(hma$Age)
-    hmd$Age <- as.integer(hmd$Age)
-
-    mma$Age <- as.integer(mma$Age)
-    mmd$Age <- as.integer(mmd$Age)
-
-    lma$Age <- as.integer(lma$Age)
-    lmd$Age <- as.integer(lmd$Age)
-
-    hma <- melt(hma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-    hmd <- melt(hmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-
-    mma <- melt(mma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-    mmd <- melt(mmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-
-    lma <- melt(lma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-    lmd <- melt(lmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-
-    hma$Year <- as.integer(hma$Year)
-    hmd$Year <- as.integer(hmd$Year)
-
-    mma$Year <- as.integer(mma$Year)
-    mmd$Year <- as.integer(mmd$Year)
-
-    lma$Year <- as.integer(lma$Year)
-    lmd$Year <- as.integer(lmd$Year)
-
-    hma$Rate <- as.numeric(hma$Rate)
-    hmd$Rate <- as.numeric(hmd$Rate)
-    mma$Rate <- as.numeric(mma$Rate)
-    mmd$Rate <- as.numeric(mmd$Rate)
-    lma$Rate <- as.numeric(lma$Rate)
-    lmd$Rate <- as.numeric(lmd$Rate)
-
-    hma[, c("Flow", "mrate") := .("Arrival", "High"),]
-    hmd[, c("Flow", "mrate") := .("Departure", "High"),]
-
-    mma[, c("Flow", "mrate") := .("Arrival", "Medium"),]
-    mmd[, c("Flow", "mrate") := .("Departure", "Medium"),]
-
-    lma[, c("Flow", "mrate") := .("Arrival", "Low"),]
-    lmd[, c("Flow", "mrate") := .("Departure", "Low"),]
-
-    return(rbind(hma, hmd, mma, mmd, lma, lmd))
-
-}
 
 CreateRDSDataFiles <- function() {
     # Uses the FixFertility, Fix Mortality & FixMigration functions to create RDS data.table objects.
@@ -299,6 +120,186 @@ CreateRDSDataFiles <- function() {
     #   vic.fertility.rds - ABS victoria fertility projections
     #   vic.mortality.rds - ABS victoria mortality projections
     #   vic.migration.rds - ABS victoria migration projections
+
+
+    # Utility functions for data cleansing and reshaping
+    FixFertility <- function(hf, mf, lf) {
+
+        # Prepares the fertility data into a data.table.
+
+        # Args: 
+        #   hf: a data.table of high fertility rates.
+        #   mf: a data.table of medium fertility rates.
+        #   lf: a data.table of low fertility rates.
+        #
+        # Return:
+        #   a data.table with age, year, rate and fertility as columns.
+
+        names(hf) <- c("Age", 2017:2027)
+        names(mf) <- c("Age", 2017:2027)
+        names(lf) <- c("Age", 2017:2027)
+
+        hf.firstrow <- which(hf$"2017" == "Victoria") + 2
+        hf.lastrow <- which(hf$"2017" == "Queensland") - 4
+
+        mf.firstrow <- which(mf$"2017" == "Victoria") + 2
+        mf.lastrow <- which(mf$"2017" == "Queensland") - 4
+
+        lf.firstrow <- which(lf$"2017" == "Victoria") + 2
+        lf.lastrow <- which(lf$"2017" == "Queensland") - 4
+
+        hf <- hf[hf.firstrow:hf.lastrow,,]
+        mf <- mf[mf.firstrow:mf.lastrow,,]
+        lf <- lf[lf.firstrow:lf.lastrow,,]
+
+        hf$"2017" <- as.numeric(hf$"2017")
+        mf$"2017" <- as.numeric(mf$"2017")
+        lf$"2017" <- as.numeric(lf$"2017")
+
+        hf$Age <- as.integer(hf$Age)
+        mf$Age <- as.integer(mf$Age)
+        lf$Age <- as.integer(lf$Age)
+
+        hf <- melt(hf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+        mf <- melt(mf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+        lf <- melt(lf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+
+        hf$Year <- as.integer(hf$Year)
+        mf$Year <- as.integer(mf$Year)
+        lf$Year <- as.integer(lf$Year)
+
+        hf[, frate := .("High"),]
+        mf[, frate := .("Med"),]
+        lf[, frate := .("Low"),]
+
+
+
+        return(rbind(hf, mf, lf))
+
+    }
+
+    FixMortality <- function(hm, mm) {
+
+        # Prepares the mortality data into a table.
+
+        # Args: 
+        #   hm: a data.table of high mortality rates
+        #   mm: a data.table of medium mortality rates
+
+        # Return:
+        #   a data.table with age, year, proportion and mortality as dimensions.
+
+        hm <- hm[7:nrow(hm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+        mm <- mm[7:nrow(mm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+        names(hm) <- c("Year", "Age", "Male", "Female")
+        names(mm) <- c("Year", "Age", "Male", "Female")
+
+        hm$Age <- as.integer(hm$Age)
+        mm$Age <- as.integer(mm$Age)
+
+
+        hm <- melt(hm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+        mm <- melt(mm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+        hm$Year <- as.integer(hm$Year)
+        mm$Year <- as.integer(mm$Year)
+
+        hm$Rate <- as.numeric(hm$Rate)
+        mm$Rate <- as.numeric(mm$Rate)
+
+        hm[, mrate := .("High"),]
+        mm[, mrate := .("Med"),]
+
+
+        return(rbind(hm, mm))
+
+    }
+
+    FixMigration <- function(hma, hmd, mma, mmd, lma, lmd) {
+
+        # Prepares the migration data into an table.
+
+        # Args: 
+        #   hma: a data.table of high migration arrival rates
+        #   hmd: a data.table of high migration departure rates
+        #   mma: a data.table of medium migration arrival rates
+        #   mmd: a data.table of medium migration departure rates
+        #   lma: a data.table of high migration arrival rates
+        #   lmd: a data.table of high migration departure rates
+
+        # Return:
+        #   a data.table with age, year, proportion and mortality as dimensions.
+
+        #hma <- vic.high.migration.arrivals
+        #hmd <- vic.high.migration.departures
+        #mma <- vic.medium.migration.arrivals
+        #mmd <- vic.medium.migration.departures
+        #lma <- vic.low.migration.arrivals
+        #lmd <- vic.low.migration.departures
+
+        hma <- hma[8:nrow(hma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+        hmd <- hmd[8:nrow(hmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+        mma <- hma[8:nrow(mma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+        mmd <- mmd[8:nrow(mmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+        lma <- lma[8:nrow(lma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+        lmd <- lmd[8:nrow(lmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+        names(hma) <- c("Year", "Age", "Male", "Female")
+        names(hmd) <- c("Year", "Age", "Male", "Female")
+        names(mma) <- c("Year", "Age", "Male", "Female")
+        names(mmd) <- c("Year", "Age", "Male", "Female")
+        names(lma) <- c("Year", "Age", "Male", "Female")
+        names(lmd) <- c("Year", "Age", "Male", "Female")
+
+        hma$Age <- as.integer(hma$Age)
+        hmd$Age <- as.integer(hmd$Age)
+
+        mma$Age <- as.integer(mma$Age)
+        mmd$Age <- as.integer(mmd$Age)
+
+        lma$Age <- as.integer(lma$Age)
+        lmd$Age <- as.integer(lmd$Age)
+
+        hma <- melt(hma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+        hmd <- melt(hmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+        mma <- melt(mma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+        mmd <- melt(mmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+        lma <- melt(lma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+        lmd <- melt(lmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+        hma$Year <- as.integer(hma$Year)
+        hmd$Year <- as.integer(hmd$Year)
+
+        mma$Year <- as.integer(mma$Year)
+        mmd$Year <- as.integer(mmd$Year)
+
+        lma$Year <- as.integer(lma$Year)
+        lmd$Year <- as.integer(lmd$Year)
+
+        hma$Rate <- as.numeric(hma$Rate)
+        hmd$Rate <- as.numeric(hmd$Rate)
+        mma$Rate <- as.numeric(mma$Rate)
+        mmd$Rate <- as.numeric(mmd$Rate)
+        lma$Rate <- as.numeric(lma$Rate)
+        lmd$Rate <- as.numeric(lmd$Rate)
+
+        hma[, c("Flow", "mrate") := .("Arrival", "High"),]
+        hmd[, c("Flow", "mrate") := .("Departure", "High"),]
+
+        mma[, c("Flow", "mrate") := .("Arrival", "Medium"),]
+        mmd[, c("Flow", "mrate") := .("Departure", "Medium"),]
+
+        lma[, c("Flow", "mrate") := .("Arrival", "Low"),]
+        lmd[, c("Flow", "mrate") := .("Departure", "Low"),]
+
+        return(rbind(hma, hmd, mma, mmd, lma, lmd))
+
+    }
 
 
     # Loading ABS population projections for Victoria 2017-2025
@@ -355,10 +356,7 @@ CreateRDSDataFiles <- function() {
     vic.tb.mortality[sex == "male", sex := "Mmale"]
     vic.tb.mortality[sex == "female", sex := "Female"]
     saveRDS(vic.tb.mortality , "Data/vic.tb.mortality.rds")
-
-
-
-
+           
 }
 
 
