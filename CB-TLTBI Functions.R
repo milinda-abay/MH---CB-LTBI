@@ -133,7 +133,7 @@ Get.MR <- function(DT, year, rate.assumption = "High") {
 # Look up the Reactivation rate
 Get.RR <- function(DT, year) {
 
-    RRates[DT[, .(AGERP, SEXP, ST = year - YARP)], Rate, on = .(Age = AGERP, Sex = SEXP, statetime = ST)]
+   RRates[DT[, .(AGERP, SEXP, ST = year - YARP)], Rate, on = .(Age = AGERP, Sex = SEXP, statetime = ST)]
 
 }
 
@@ -181,7 +181,7 @@ Get.DISCOUNT <- function() {
 }
 
 
-Get.Cost <- function() {
+Get.Cost <- function(testing, treatment) {
 
 
 
@@ -245,6 +245,14 @@ PerformMatrixMultiplication <- function(dM, tM, l, z) {
     flows <- dM[, as.list(bar[,, .I] %*% (foo[,, .I] - diag(diag(foo[,, .I])))), by = seq_len(z)]
 
     counts <- dM[, as.list(matrix(bar[,, .I], ncol = l) %*% foo[,, .I]), by = seq_len(z)]
+    browser()
+
+    flows <- flows[, - c("seq_len")]
+    counts <- counts[, - c("seq_len")]
+
+    #TODO include discount
+    flows.cost <- flows[,Map("*",state.costs,.SD)]
+    count.cost <- counts
 
     return(list(counts, flows))
 
@@ -333,10 +341,8 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment) {
     print("PMM End")
     print(Sys.time())
 
-    results[[1]] <- results[[1]][, - c("seq_len")]
-    results[[2]] <- results[[2]][, - c("seq_len")]
 
-    # CalculateHealthEconomics(DT,results,year)
+
 
     names(results[[2]]) <- paste("V.", state.names, sep = "")
 
@@ -350,6 +356,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment) {
 
 
 }
+
 
 #------------------------------------------------------------------------#
 

@@ -77,8 +77,8 @@ utility.dt <- data.table(p.sus = 1, p.sus.fp.t = 1, p.sus.fp.nt = 1, p.sus.fp.tc
 
 
 
-
-
+state.costs <- c(1:23)
+results[[1]] * state.costs
 
 # Sample commands demonstrating the functional argument list. 
 arglist <- CreateArgumentList(state.names, state.number)
@@ -152,13 +152,13 @@ S2 <- DefineStrategy(p.sus, p.sus.fp.t, p.sus.fp.nt, p.sus.fp.tc, p.sus.tn,
 parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
                                RR = Get.RR(DT, year),
                                TBMR = Get.TBMR(DT, year),
-                               TESTSN = Get.TEST(S = "SN",testing),
-                               TESTSP = Get.TEST(S = "SP",testing),
+                               TESTSN = Get.TEST(S = "SN", testing),
+                               TESTSP = Get.TEST(S = "SP", testing),
                                TREATR = Get.TREATR(treatment),
                                POP = Get.POP(),
                                UTILITY = Get.UTILITY(),
                                DISCOUNT = Get.DISCOUNT(),
-                               COST = Get.Cost()
+                               COST = Get.Cost(testing, treatment)
                                )
 
 
@@ -188,7 +188,7 @@ pop.output <- pop.master[YARP == year][, cycle := 0] #[1: n_cohorts_to_evaluate]
 
 # TODO - If start.year != 2016 then recalculate AGEP at start.year!
 
-pop.output <- RunModel(pop.output,strategy =S2, testing="TST15", treatment = "4R", start.year = 2020, cycles = 10)
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "4R", start.year = 2020, cycles = 10)
 # pop.output <- RunModel(pop.output[1: cohorts_to_track])
 
 # Saves output, chage file name as required
