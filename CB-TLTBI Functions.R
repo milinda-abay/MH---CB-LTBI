@@ -193,7 +193,7 @@ Get.Cost <- function(testing, treatment) {
 
 # Calculates the CMP value after evaluation of the promise objects in parameter and transition matrix.
 CalculateCMP <- function(tM, l, z) {
-
+    
     y <- unlist(tM)
 
     dim(y) <- c(z, l, l)
@@ -225,7 +225,7 @@ CalculateCMP <- function(tM, l, z) {
 
 
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
-PerformMatrixMultiplication <- function(dM, tM, l, z) {
+PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle) {
 
     # Make the current data matrix a list
     bar <- unlist(dM)
@@ -239,35 +239,45 @@ PerformMatrixMultiplication <- function(dM, tM, l, z) {
     dim(foo) <- c(z, l, l)
     foo <- aperm(foo, perm = c(3, 2, 1))
 
-    # Carry out the matrix multiplication with a data.table frame.
-    # Enables iteration and subsetting by using .I
+    # Carry out the matrix multiplication within the dM data.table frame.
+    # By using .I it enables iteration and subsetting the 3D arrays bar and foo.  
+    # This results in a 2D array and enables matrix multiplication.
 
     flows <- dM[, as.list(bar[,, .I] %*% (foo[,, .I] - diag(diag(foo[,, .I])))), by = seq_len(z)]
 
     counts <- dM[, as.list(matrix(bar[,, .I], ncol = l) %*% foo[,, .I]), by = seq_len(z)]
-    browser()
 
     flows <- flows[, - c("seq_len")]
     counts <- counts[, - c("seq_len")]
 
     #TODO include discount
-    flows.cost <- flows[,Map("*",state.costs,.SD)]
-    count.cost <- counts
+        
+    if (markov.cycle == 0) {
+        discount <- 1
+    } else {
+        discount <- (1-discount)^markov.cycle
+    }
 
-    return(list(counts, flows))
+    flow.cost <- discount * flow.cost
+    state.cost <- discount * state.cost
+
+    flow.cost <- flows[,Map("*",flow.cost,.SD)]
+    count.cost <- counts[, Map("*", state.cost, .SD)]
+
+    return(list(counts, flows, count.cost, flow.cost))
 
 }
 
 
 # The primary function RunModel() calls to perform row by row transition calculations.
-GetStateCounts <- function(DT, year, strategy, testing, treatment) {
-
+GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle) {
+    
     # collapsing the promise object 
     testing
     treatment
     transMatrix <- strategy$transition
     
-
+   
     z <- nrow(DT)
     l <- sqrt(length(strategy$transition))
 
@@ -334,24 +344,23 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment) {
     # Select the numeric state value columns in preparation for multiplication.
     dM <- DT[, ..state.names]
 
-
     print("PMM Start")
     print(Sys.time())
-    results <- PerformMatrixMultiplication(dM, tM, l, z)
+    results <- PerformMatrixMultiplication(dM, tM, l, z, markov.cycle)
     print("PMM End")
     print(Sys.time())
 
 
-
-
     names(results[[2]]) <- paste("V.", state.names, sep = "")
-
+    names(results[[3]]) <- paste("SC.", state.names, sep = "")
+    names(results[[4]]) <- paste("FC.", state.names, sep = "")
     # browser() # uncomment for testing
 
 
+    
 
+    results <- cbind(results[[1]], results[[2]], results[[3]], results[[4]])
 
-    results <- cbind(results[[1]], results[[2]])
 
 
 
@@ -376,7 +385,7 @@ RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycle
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
 
         # The vectorised solution where the entire table is passed to GetStateCounts
-        pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year, strategy, testing, treatment)]
+        pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year, strategy, testing, treatment, markov.cycle)]
 
         # Update counters
         markov.cycle <- markov.cycle + 1

@@ -56,8 +56,8 @@ state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn"
 # Number of states
 state.number <- length(state.names)
 
-# a hack
-new.state.names <- c(state.names, paste("V.", state.names, sep = ""))
+# a hack to manage the flows, state.cost and flow.cost values.
+new.state.names <- c(state.names, paste("V.", state.names, sep = ""), paste("SC.", state.names, sep = ""), paste("FC.", state.names, sep = ""))
 
 
 # Create a sample data table of test sensitivity & specificity
@@ -75,10 +75,6 @@ utility.dt <- data.table(p.sus = 1, p.sus.fp.t = 1, p.sus.fp.nt = 1, p.sus.fp.tc
                  p.ltbi.fn.tbr = 1, p.ltbi.tb = 1, p.ltbi.tbr = 1, p.ltbi.tp.tc.tb.death = 1, p.ltbi.tp.nt.tb.death = 1,
                  p.ltbi.fn.tb.death = 1, p.ltbi.tb.death = 1, p.death = 0)
 
-
-
-state.costs <- c(1:23)
-results[[1]] * state.costs
 
 # Sample commands demonstrating the functional argument list. 
 arglist <- CreateArgumentList(state.names, state.number)
@@ -148,6 +144,16 @@ S2 <- DefineStrategy(p.sus, p.sus.fp.t, p.sus.fp.nt, p.sus.fp.tc, p.sus.tn,
                  transition.matrix = do.call(DefineTransition, arglist.S2.TM))
 
 
+BO <- DefineStrategy(p.sus, p.sus.fp.t, p.sus.fp.nt, p.sus.fp.tc, p.sus.tn,
+                 p.ltbi, p.ltbi.tp.t, p.ltbi.tp.tc, p.ltbi.tp.tc.tb, p.ltbi.tp.tc.tbr,
+                 p.ltbi.tp.nt, p.ltbi.tp.nt.tb, p.ltbi.tp.nt.tbr, p.ltbi.fn, p.ltbi.fn.tb,
+                 p.ltbi.fn.tbr, p.ltbi.tb, p.ltbi.tbr, p.ltbi.tp.tc.tb.death, p.ltbi.tp.nt.tb.death,
+                 p.ltbi.fn.tb.death, p.ltbi.tb.death, p.death,
+                 transition.matrix = do.call(DefineTransition, arglist.BASELINE.TM))
+
+
+
+
 # Creates an unevaluated set of parameters
 parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
                                RR = Get.RR(DT, year),
@@ -162,24 +168,36 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
                                )
 
 
-# Uses aust.LGA.rds file to create a sample input
-pop.master <- CreatePopulationMaster()
-
-# Run only for Strategy #1 population master 
-pop.master <- ModifyPop(pop.master, arglist)
-
 # Model parameters
-testing <- "TST15"
-treatment <- "4R"
+discount <- 0.03
 start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
 cycles <- 10 # Model run cycles
+
+# Placeholder vectors for state costs and flow costs
+# TODO - Milinda: implement this using data.tables.
+state.cost <- c(p.sus = 0, p.sus.fp.t = 490, p.sus.fp.nt = 0, p.sus.fp.tc = 0, p.sus.tn = 0,
+                 p.ltbi = 0, p.ltbi.tp.t = 490, p.ltbi.tp.tc = 0, p.ltbi.tp.tc.tb = 9415, p.ltbi.tp.tc.tbr = 0,
+                 p.ltbi.tp.nt = 0, p.ltbi.tp.nt.tb = 9415, p.ltbi.tp.nt.tbr = 0, p.ltbi.fn = 0, p.ltbi.fn.tb = 9415,
+                 p.ltbi.fn.tbr = 0, p.ltbi.tb = 9415, p.ltbi.tbr = 0, p.ltbi.tp.tc.tb.death = 0, p.ltbi.tp.nt.tb.death = 0,
+                 p.ltbi.fn.tb.death = 0, p.ltbi.tb.death = 0, p.death = 0)
+flow.cost <- c(rep(10, 23))
+
+
+# Uses aust.LGA.rds file to create a sample input
+pop.master <- CreatePopulationMaster()
+
+# Run only for Strategy #1 population master
+arglist$load.list("S1.TM.QTFGIT.4R")
+pop.master <- ModifyPop(pop.master, arglist)
+
+
+
 #n_cohorts_to_evaluate <- nrow(pop.master) # Can be adjusted to save running time if you don't want to evaluate the entire population
 #n_cohorts_to_evaluate <- 10
 
 # Creates and initialises the population output table for the model (markov.cycle = 0)
-# pop.output <- pop.master[YARP <= year & AGERP <= 40 & AGEP <= 40][, cycle := markov.cycle][1:100]
 pop.output <- pop.master[YARP == year][, cycle := 0] #[1: n_cohorts_to_evaluate] 
 
 # Toggle to reduce number of cohorts to evaluate to speed running time
@@ -188,11 +206,60 @@ pop.output <- pop.master[YARP == year][, cycle := 0] #[1: n_cohorts_to_evaluate]
 
 # TODO - If start.year != 2016 then recalculate AGEP at start.year!
 
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "4R", start.year = 2020, cycles = 10)
+pop.output <- RunModel(pop.output, strategy = S1.QTFGIT.4R, testing = "QTFGIT", treatment = "4R", start.year = 2020, cycles = 10)
 # pop.output <- RunModel(pop.output[1: cohorts_to_track])
 
 # Saves output, chage file name as required
+saveRDS(pop.output, "Data/S1.QTFGIT.4R.rds")
+
+
+# Repeat for all remaining 
+arglist$load.list("S1.TM.TST10.4R")
+pop.master <- CreatePopulationMaster()
+pop.master <- ModifyPop(pop.master, arglist)
+pop.output <- pop.master[YARP == year][, cycle := 0]
+pop.output <- RunModel(pop.output, strategy = S1.TST10.4R, testing = "TST10", treatment = "4R", start.year = 2020, cycles = 10)
+saveRDS(pop.output, "Data/S1.TST10.4R.rds")
+
+
+arglist$load.list("S1.TM.TST15.4R")
+pop.master <- CreatePopulationMaster()
+pop.master <- ModifyPop(pop.master, arglist)
+pop.output <- pop.master[YARP == year][, cycle := 0]
+pop.output <- RunModel(pop.output, strategy = S1.TST15.4R, testing = "TST15", treatment = "4R", start.year = 2020, cycles = 10)
 saveRDS(pop.output, "Data/S1.TST15.4R.rds")
+
+
+pop.master <- CreatePopulationMaster()
+pop.output <- pop.master[YARP == year][, cycle := 0]
+pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "4R", start.year = 2020, cycles = 10)
+saveRDS(pop.output, "Data/S2.QTFGIT.4R.rds")
+
+
+pop.output <- pop.master[YARP == year][, cycle := 0]
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "4R", start.year = 2020, cycles = 10)
+saveRDS(pop.output, "Data/S2.TST10.4R.rds")
+
+pop.output <- pop.master[YARP == year][, cycle := 0]
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "4R", start.year = 2020, cycles = 10)
+saveRDS(pop.output, "Data/S2.TST15.4R.rds")
+
+# Finally Baseline
+state.cost <- c(p.sus = 0, p.sus.fp.t = 0, p.sus.fp.nt = 0, p.sus.fp.tc = 0, p.sus.tn = 0,
+                 p.ltbi = 0, p.ltbi.tp.t = 0, p.ltbi.tp.tc = 0, p.ltbi.tp.tc.tb = 0, p.ltbi.tp.tc.tbr = 0,
+                 p.ltbi.tp.nt = 0, p.ltbi.tp.nt.tb = 0, p.ltbi.tp.nt.tbr = 0, p.ltbi.fn = 0, p.ltbi.fn.tb = 0,
+                 p.ltbi.fn.tbr = 0, p.ltbi.tb = 9415, p.ltbi.tbr = 0, p.ltbi.tp.tc.tb.death = 0, p.ltbi.tp.nt.tb.death = 0,
+                 p.ltbi.fn.tb.death = 0, p.ltbi.tb.death = 0, p.death = 0)
+
+pop.master <- CreatePopulationMaster()
+pop.output <- pop.master[YARP == year][, cycle := 0]
+pop.output <- RunModel(pop.output, strategy = BO, testing = "", treatment = "", start.year = 2020, cycles = 10)
+saveRDS(pop.output, "Data/BO.rds")
+
+
+
+
+
 
 # Creates an unevaluated transition matrix
 # Use 'CMP' for complement and 'param$*' for parameters.
