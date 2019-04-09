@@ -356,7 +356,45 @@ CreateRDSDataFiles <- function() {
 }
 
 
+CreateOutput <- function(DT, strategy, test) {
 
+    DT[, c("Strategy", "Test") := .(strategy, test)]
+
+    DT <- DT[, c(101:102, 1:100)]
+
+    # State count table
+    DT.S <- DT[, c(1:10, 11:33)]
+    fwrite(DT.S, paste("Data/", strategy, "_", test, "_4R_S.csv", sep = ""))
+    DT.S <- fread(file = paste("Data/", strategy, "_", test, "_4R_S.csv", sep = ""))
+    saveRDS(DT.S, paste("Data/", strategy, "_", test, "_4R_S.rds", sep = ""))
+    
+
+    # Flow count table
+    DT.F <- DT[, c(1:10, 34:56)]
+    colnames(DT.F) <- gsub("V.", "", colnames(DT.F))
+    fwrite(DT.F, paste("Data/", strategy, "_", test, "_4R_F.csv", sep = ""))
+    DT.F <- fread(file = paste("Data/",strategy,"_",test,"_4R_F.csv", sep =""))
+    saveRDS(DT.F, paste("Data/", strategy, "_", test, "_4R_F.rds", sep = ""))
+    
+
+
+    # State cost table
+    DT.SC <- DT[, c(1:10, 57:79)]
+    colnames(DT.SC) <- gsub("SC.", "", colnames(DT.SC))
+    fwrite(DT.SC, paste("Data/", strategy, "_", test, "_4R_SC.csv", sep = ""))
+    DT.SC <- fread(file = paste("Data/", strategy, "_", test, "_4R_SC.csv", sep =""))
+    saveRDS(DT.SC, paste("Data/", strategy, "_", test, "_4R_SC.rds", sep = ""))
+    #
+
+    # Flow cost table
+    DT.FC <- DT[, c(1:10, 80:102)]
+    colnames(DT.FC) <- gsub("FC.", "", colnames(DT.FC))
+    fwrite(DT.FC, paste("Data/", strategy, "_", test, "_4R_FC.csv", sep = ""))
+    DT.FC <- fread(file = paste("Data/", strategy, "_", test, "_4R_FC.csv", sep = ""))
+    saveRDS(DT.FC, paste("Data/", strategy, "_", test, "_4R_FC.rds", sep = ""))
+    
+
+}
 
 #strategy <- DefineStrategy(
 

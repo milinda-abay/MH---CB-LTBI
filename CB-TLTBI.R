@@ -6,7 +6,6 @@
 options(prompt = "R> ")
 
 
-
 # Load libraries. (not needed if using the *.rds data files objects)
 #library(tidyverse)
 #library(reshape2)
@@ -169,7 +168,7 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 
 
 # Model parameters
-discount <- 0.03
+discount <- 0.0
 start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
@@ -256,6 +255,47 @@ pop.output <- pop.master[YARP == year][, cycle := 0]
 pop.output <- RunModel(pop.output, strategy = BO, testing = "", treatment = "", start.year = 2020, cycles = 10)
 saveRDS(pop.output, "Data/BO.rds")
 
+
+
+# Create output files for PowerBI i.e splitting each output into four files
+CreateOutput(BO, "BO", "No Test")
+CreateOutput(S1.QTFGIT.4R, "S1", "QTFGIT")
+CreateOutput(S1.TST10.4R, "S1", "TST10")
+CreateOutput(S1.TST15.4R, "S1", "TST15")
+CreateOutput(S2.QTFGIT.4R, "S2", "QTFGIT")
+CreateOutput(S2.TST10.4R, "S2", "TST10")
+CreateOutput(S2.TST15.4R, "S2", "TST15")
+
+
+StateCount <- rbind(readRDS("Data/BO_No Test_4R_S.rds"), readRDS("Data/S1_TST10_4R_S.rds"),
+                    readRDS("Data/S1_TST15_4R_S.rds"), readRDS("Data/S1_QTFGIT_4R_S.rds"),
+                    readRDS("Data/S2_TST10_4R_S.rds"), readRDS("Data/S2_TST15_4R_S.rds"),
+                    readRDS("Data/S2_QTFGIT_4R_S.rds"))
+
+saveRDS(StateCount, "Data/StateCount.rds")
+
+
+FlowCount <- rbind(readRDS("Data/BO_No Test_4R_F.rds"), readRDS("Data/S1_TST10_4R_F.rds"),
+                    readRDS("Data/S1_TST15_4R_F.rds"), readRDS("Data/S1_QTFGIT_4R_F.rds"),
+                    readRDS("Data/S2_TST10_4R_F.rds"), readRDS("Data/S2_TST15_4R_F.rds"),
+                    readRDS("Data/S2_QTFGIT_4R_F.rds"))
+
+saveRDS(FlowCount, "Data/FlowCount.rds")
+
+StateCost <- rbind(readRDS("Data/BO_No Test_4R_SC.rds"), readRDS("Data/S1_TST10_4R_SC.rds"),
+                    readRDS("Data/S1_TST15_4R_SC.rds"), readRDS("Data/S1_QTFGIT_4R_SC.rds"),
+                    readRDS("Data/S2_TST10_4R_SC.rds"), readRDS("Data/S2_TST15_4R_SC.rds"),
+                    readRDS("Data/S2_QTFGIT_4R_SC.rds"))
+
+saveRDS(StateCost, "Data/StateCost.rds")
+
+
+FlowCost <- rbind(readRDS("Data/BO_No Test_4R_FC.rds"), readRDS("Data/S1_TST10_4R_FC.rds"),
+                    readRDS("Data/S1_TST15_4R_FC.rds"), readRDS("Data/S1_QTFGIT_4R_FC.rds"),
+                    readRDS("Data/S2_TST10_4R_FC.rds"), readRDS("Data/S2_TST15_4R_FC.rds"),
+                    readRDS("Data/S2_QTFGIT_4R_FC.rds"))
+
+saveRDS(FlowCost, "Data/FlowCost.rds")
 
 
 
