@@ -95,13 +95,17 @@ CreateArgumentList <- function(state.names, state.number) {
         #because it is column-wise
         arglist[, row] <<- rowvalues
     },
-    update.cell = function(row, col, value) { arglist[[row, col]] <<- value },
-    show.list = function() arglist,
+    update.cell = function(row, col, value) { arglist[[col, row]] <<- value },
+    show.list = function() aperm(arglist, c(2, 1)),
     add.state.name = function(state.names) {
         arglist[[state.number ^ 2 + 1]] <<- state.names
         names(arglist)[state.number ^ 2 + 1] <<- "state.names"
     },
+    show.row = function(row) {
 
+        arglist[,row]
+
+    },
     drop.state.name = function() {
         arglist[state.number ^ 2 + 1] <<- NULL
         dim(arglist) <<- c(state.number, state.number)
@@ -160,9 +164,17 @@ Get.TREATR <- function(treatment) {
 }
 
 # look up target population percentage
-Get.POP <- function() {
+Get.POP <- function(strategy) {
 
-    .6 # only for strategy 2
+    
+    switch(strategy$myname,
+           BO = 1,
+           S1 = 1,
+           S2 = 0.6,
+           0
+    ) 
+
+    
 
 }
 
@@ -371,7 +383,10 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
 
 # The main model runtime loop 
 RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycles) {
-
+    
+    #To keep track of the current strategy name
+    strategy$myname <- deparse(substitute(strategy))
+       
     # initialise the calculation object
     pop.calculated <- copy(pop.output)
 
