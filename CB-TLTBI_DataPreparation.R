@@ -45,6 +45,12 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017 to 2025.
     # again this is for validating the model at runtime.
 
+    # deleted 2016 due to it being a census year with 1/2 half.
+    pop.master <- pop.master[YARP != 2016]
+
+
+
+    pop.master.2016 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2016, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
@@ -61,7 +67,7 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     pop.master.2030 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2030, NUMP, LTBP, AGERP, SEXP),]
 
 
-    pop.master <- rbind(pop.master, pop.master.2017, pop.master.2018, pop.master.2019,
+    pop.master <- rbind(pop.master, pop.master.2016, pop.master.2017, pop.master.2018, pop.master.2019,
                         pop.master.2020, pop.master.2021, pop.master.2022, pop.master.2023,
                         pop.master.2024, pop.master.2025, pop.master.2026, pop.master.2027,
                         pop.master.2028, pop.master.2029, pop.master.2030)
@@ -89,7 +95,8 @@ CreatePopulationMaster <- function(Modify = FALSE) {
         
     } else {
 
-        pop.master <- pop.master[, AGERP := AGEP - (2016 - YARP)]
+        pop.master <- pop.master[YARP < 2016, AGERP := AGEP - (2016 - YARP)]
+        pop.master <- pop.master[YARP >= 2016, AGERP := AGEP-1] # because YARP 2015 is used for 2016 to 2030
     }
 
             

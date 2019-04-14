@@ -151,37 +151,39 @@ Get.TBMR <- function(DT, year) {
 
 # look up test sensitivity / specificity 
 Get.TEST <- function(S,testing) {
-
+    
     as.numeric(tests.dt[tests == testing, ..S])
 
 }
 
 # look up treatment completion rate
-Get.TREATR <- function(treatment) {
-
-    0.6818 # for 4R
+Get.TREAT <- function(S, treat) {
+   
+   as.numeric(treatment.dt[treatment == treat, ..S])
 
 }
 
 # look up target population percentage
-Get.POP <- function(strategy) {
+Get.POP <- function(DT, strategy) {
 
-    
-    switch(strategy$myname,
-           BO = 1,
-           S1 = 1,
-           S2 = 0.6,
-           0
-    ) 
-
-    
-
+    ifelse(DT$YARP < 2020,
+           switch(strategy$myname,
+                  BO = 0,
+                  S1 = 1,
+                  S2 = 1,
+                  S3 = 0.05,
+                  S4 = 0.10,
+                  0
+                  ),
+                  1
+                  )
+             
 }
 
 
-Get.UTILITY <- function() {
+Get.UTILITY <- function(t) {
 
-    as.list(utility.dt)
+    as.list(utility.dt[treatment==t])
 
 }
 
@@ -192,13 +194,6 @@ Get.DISCOUNT <- function() {
 
 }
 
-
-Get.Cost <- function(testing, treatment) {
-
-
-
-
-}
 
 
 
@@ -237,8 +232,8 @@ CalculateCMP <- function(tM, l, z) {
 
 
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
-PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle) {
-
+PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, state.cost, utility) {
+    
     # Make the current data matrix a list
     bar <- unlist(dM)
 
@@ -276,6 +271,8 @@ PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle) {
     flow.cost <- flows[,Map("*",flow.cost,.SD)]
     count.cost <- counts[, Map("*", state.cost, .SD)]
 
+    #state.utility <-  counts[, Map("*", utility, .SD)]
+
     return(list(counts, flows, count.cost, flow.cost))
 
 }
@@ -287,6 +284,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     # collapsing the promise object 
     testing
     treatment
+    
     transMatrix <- strategy$transition
     
    
@@ -302,20 +300,27 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     parameters$TBMR$env <- environment()
     parameters$TESTSN$env <- environment()
     parameters$TESTSP$env <- environment()
+    parameters$TESTC$env <- environment()
     parameters$TREATR$env <- environment()
+    parameters$TREATC$env <- environment()
     parameters$POP$env <- environment()
-    parameters$COST$env <- environment()
     parameters$UTILITY$env <- environment()
-    parameters$DISCOUNT$env <- environment()
+    parameters$TBCOST$env <- environment()
 
-    
-       
+    unevaluated.flow.cost$env <- environment()
+    unevaluated.state.cost$env <- environment()
+
+
+
+
     # evaluate parameters 
     # NOTE: at this point both Get.MR() and Get.RR() functions are called by the evaluator.
     # Use param$* when using DefineTransition() 
     param <- lazy_eval(parameters)
 
-    
+    flow.cost <- lazy_eval(unevaluated.flow.cost)
+    state.cost <- lazy_eval(unevaluated.state.cost)
+    utility <-  param$UTILITY
 
     # a Hack for YARP < 2016, vic mortality doesnt have data to look up 
     param$MR[is.na(param$MR)] <- 0.01
@@ -358,7 +363,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
 
     print("PMM Start")
     print(Sys.time())
-    results <- PerformMatrixMultiplication(dM, tM, l, z, markov.cycle)
+    results <- PerformMatrixMultiplication(dM, tM, l, z, markov.cycle, flow.cost, state.cost, utility)
     print("PMM End")
     print(Sys.time())
 
@@ -368,7 +373,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     names(results[[4]]) <- paste("FC.", state.names, sep = "")
     # browser() # uncomment for testing
 
-
+  
     
 
     results <- cbind(results[[1]], results[[2]], results[[3]], results[[4]])
@@ -431,5 +436,6 @@ RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycle
         # Saving state in pop.output
         pop.output <- rbind(pop.output, pop.calculated)
     }
+
     pop.output
 }
