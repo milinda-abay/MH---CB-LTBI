@@ -148,7 +148,6 @@ Get.TBMR <- function(DT, year) {
 
 }
 
-
 # look up test sensitivity / specificity 
 Get.TEST <- function(S,testing) {
     
@@ -170,12 +169,13 @@ Get.POP <- function(DT, strategy) {
            switch(strategy$myname,
                   BO = 0,
                   S1 = 1,
-                  S2 = 1,
+                  S2 = 0,
                   S3 = 0.05,
                   S4 = 0.10,
+                  S5 = 0.15,
                   0
                   ),
-                  1
+                  0.6
                   )
              
 }
@@ -183,7 +183,7 @@ Get.POP <- function(DT, strategy) {
 
 Get.UTILITY <- function(t) {
 
-    as.list(utility.dt[treatment==t])
+   as.numeric(utility.dt[treatment==t][,2:24])
 
 }
 
@@ -233,7 +233,7 @@ CalculateCMP <- function(tM, l, z) {
 
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
 PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, state.cost, utility) {
-    
+   
     # Make the current data matrix a list
     bar <- unlist(dM)
 
@@ -270,10 +270,11 @@ PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, s
 
     flow.cost <- flows[,Map("*",flow.cost,.SD)]
     count.cost <- counts[, Map("*", state.cost, .SD)]
+    
 
-    #state.utility <-  counts[, Map("*", utility, .SD)]
+    state.QALY <-  counts[, Map("*", utility, .SD)]
 
-    return(list(counts, flows, count.cost, flow.cost))
+    return(list(counts, flows, count.cost, flow.cost, state.QALY))
 
 }
 
@@ -317,6 +318,8 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     # NOTE: at this point both Get.MR() and Get.RR() functions are called by the evaluator.
     # Use param$* when using DefineTransition() 
     param <- lazy_eval(parameters)
+
+    
 
     flow.cost <- lazy_eval(unevaluated.flow.cost)
     state.cost <- lazy_eval(unevaluated.state.cost)
@@ -371,12 +374,13 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     names(results[[2]]) <- paste("V.", state.names, sep = "")
     names(results[[3]]) <- paste("SC.", state.names, sep = "")
     names(results[[4]]) <- paste("FC.", state.names, sep = "")
+    names(results[[5]]) <- paste("SQ.", state.names, sep = "")
     # browser() # uncomment for testing
 
   
     
 
-    results <- cbind(results[[1]], results[[2]], results[[3]], results[[4]])
+    results <- cbind(results[[1]], results[[2]], results[[3]], results[[4]], results[[5]])
 
 
 

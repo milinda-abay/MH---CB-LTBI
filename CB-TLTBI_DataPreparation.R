@@ -33,14 +33,11 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     #						
     # TODO -> Based on census datasets (2006,2011,2016) estimate a NUMP distribution for YARP > 2018  by LGA and ISO3.						
     #
-    # As a validation exercise the aust.LGA cohort is duplicated into male & female and LGA aggregated
-    # This done to validate the model runtime. It must be fixed!
 
-    pop.master.male <- aust.LGA[, .(NUMP = .5 * sum(NUMP), LTBP = .5 * sum(LTBP), AGERP = AGEP - (2016 - YARP), SEXP = "Male"), by = c("AGEP", "ISO3", "YARP")]
-    pop.master.female <- pop.master.male[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP, SEXP = "Female")]
+    
 
-    pop.master <- rbind(pop.master.male, pop.master.female)
-    rm(pop.master.female, pop.master.male)
+    pop.master <- aust.vic[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP = AGEP -(2016L-YARP), SEXP)]
+
 
     # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017 to 2025.
     # again this is for validating the model at runtime.
@@ -50,21 +47,21 @@ CreatePopulationMaster <- function(Modify = FALSE) {
 
 
 
-    pop.master.2016 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2016, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2020, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2021, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2022, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2023, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2024, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2028 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2028, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2029 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2029, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2030 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2030, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2016 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2016L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2020L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2021L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2022L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2023L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2024L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2028 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2028L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2029 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2029L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2030 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2030L, NUMP, LTBP, AGERP, SEXP),]
 
 
     pop.master <- rbind(pop.master, pop.master.2016, pop.master.2017, pop.master.2018, pop.master.2019,
@@ -72,7 +69,7 @@ CreatePopulationMaster <- function(Modify = FALSE) {
                         pop.master.2024, pop.master.2025, pop.master.2026, pop.master.2027,
                         pop.master.2028, pop.master.2029, pop.master.2030)
 
-    rm(pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
+    rm(pop.master.2016, pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
        pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025, pop.master.2026,
        pop.master.2027, pop.master.2028, pop.master.2029, pop.master.2030)
 
@@ -87,38 +84,39 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
 
     # Create a age at arrival column AGERP
-    # Not correct for YARP after 2016.
+    pop.master[YARP < 2016, AGERP := AGEP - (2016L - YARP)]
+    pop.master[YARP == 2016, AGERP := AGEP]
+    pop.master[YARP > 2016, AGERP := AGEP - 1L] # because it's is the 2015 cohort that's replicated for 2017 to 2030.
+
+    
     if (Modify) {
 
-        pop.master <- pop.master[, AGERP := AGEP - (2016 - YARP)]
-        pop.master[, AGEP := AGEP-1]
+        # recheck this logic! Only for S1 100% off-shore testing.
+        # Making the cohort one year younger and starting them from 2019 in p.sus and p.ltbi.
+        pop.master[YARP >= 2019, AGEP := AGEP - 1L]
         
-    } else {
-
-        pop.master <- pop.master[YARP < 2016, AGERP := AGEP - (2016 - YARP)]
-        pop.master <- pop.master[YARP >= 2016, AGERP := AGEP-1] # because YARP 2015 is used for 2016 to 2030
     }
 
-            
-
-}
-
-
-ModifyPop <- function(pop.master, arglist) {
-
-    arglist$drop.state.name()
-    x <- aperm(arglist$show.list(), c(2, 1))
-
-
-    pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
-                      p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
-                      p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
-
-    pop.master[, c("p.sus", "p.ltbi") := 0]
-
     pop.master
-
+    
 }
+
+
+#ModifyPop <- function(pop.master, arglist) {
+
+    #arglist$drop.state.name()
+    #x <- aperm(arglist$show.list(), c(2, 1))
+
+
+    #pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
+                      #p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
+                      #p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
+
+    #pop.master[, c("p.sus", "p.ltbi") := 0]
+
+    #pop.master
+
+#}
 
 
 CreateRDSDataFiles <- function() {
@@ -373,45 +371,51 @@ CreateRDSDataFiles <- function() {
 }
 
 
-CreateOutput <- function(DT, strategy, test) {
+CreateOutput <- function(DT, strategy, test, treatment) {
     
-    DT[, c("Strategy", "Test") := .(strategy, test)]
+    DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
 
-    DT <- DT[, c(101:102, 1:100)]
+    DT <- DT[, c(124:126, 1:123)]
     
     # State count table
-    DT.S <- DT[, c(1:10, 11:33)]
-    fwrite(DT.S, paste("Data/", strategy, "_", test, "_4R_S.csv", sep = ""))
-    DT.S <- fread(file = paste("Data/", strategy, "_", test, "_4R_S.csv", sep = ""))
-    saveRDS(DT.S, paste("Data/", strategy, "_", test, "_4R_S.rds", sep = ""))
+    DT.S <- DT[, c(1:11, 12:34)]
+    fwrite(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
+    #DT.S <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
+    #saveRDS(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.rds", sep = ""))
     
 
     # Flow count table
-    DT.F <- DT[, c(1:10, 34:56)]
+    DT.F <- DT[, c(1:11, 35:57)]
     colnames(DT.F) <- gsub("V.", "", colnames(DT.F))
-    fwrite(DT.F, paste("Data/", strategy, "_", test, "_4R_F.csv", sep = ""))
-    DT.F <- fread(file = paste("Data/",strategy,"_",test,"_4R_F.csv", sep =""))
-    saveRDS(DT.F, paste("Data/", strategy, "_", test, "_4R_F.rds", sep = ""))
+    fwrite(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.csv", sep = ""))
+    #DT.F <- fread(file = paste("Data/Output/",strategy,"_",test,"_", treatment, "_F.csv", sep =""))
+    #saveRDS(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.rds", sep = ""))
     
 
 
     # State cost table
-    DT.SC <- DT[, c(1:10, 57:79)]
+    DT.SC <- DT[, c(1:11, 58:80)]
     colnames(DT.SC) <- gsub("SC.", "", colnames(DT.SC))
-    fwrite(DT.SC, paste("Data/", strategy, "_", test, "_4R_SC.csv", sep = ""))
-    DT.SC <- fread(file = paste("Data/", strategy, "_", test, "_4R_SC.csv", sep =""))
-    saveRDS(DT.SC, paste("Data/", strategy, "_", test, "_4R_SC.rds", sep = ""))
-    #
-
-    # Flow cost table
-    DT.FC <- DT[, c(1:10, 80:102)]
-    colnames(DT.FC) <- gsub("FC.", "", colnames(DT.FC))
-    fwrite(DT.FC, paste("Data/", strategy, "_", test, "_4R_FC.csv", sep = ""))
-    DT.FC <- fread(file = paste("Data/", strategy, "_", test, "_4R_FC.csv", sep = ""))
-    saveRDS(DT.FC, paste("Data/", strategy, "_", test, "_4R_FC.rds", sep = ""))
+    fwrite(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep = ""))
+    #DT.SC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep =""))
+    #saveRDS(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.rds", sep = ""))
     
 
+    # Flow cost table
+    DT.FC <- DT[, c(1:11, 81:103)]
+    colnames(DT.FC) <- gsub("FC.", "", colnames(DT.FC))
+    fwrite(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
+    #DT.FC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
+    #saveRDS(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.rds", sep = ""))
+    
+    DT.SQ <- DT[, c(1:11, 104:126)]
+    colnames(DT.SQ) <- gsub("SQ.", "", colnames(DT.SQ))
+    fwrite(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
+
 }
+
+
+
 
 #strategy <- DefineStrategy(
 
