@@ -1,22 +1,17 @@
 
 
-DefineStates <- function(...) {
-
-    .dots <- lazyeval::lazy_dots(...)
-    structure(.dots, class = c("state", class(.dots)))
-}
 
 # *** Not used at this point*** Creates a default set of states and values
 CreateStates <- function(state.names) {
 
     for (i in state.names) {
-        assign(i, pos = 1, DefineStates(cost = 234, utility = 1))
+        assign(i, pos = 1, DefineStates(cost = COST, utility = UTILITY))
     }
 
 }
 
 # Creates a master migrant population table
-CreatePopulationMaster <- function() {
+CreatePopulationMaster <- function(Modify = FALSE) {
 
     # Create a pop.master table merging census (2006,2011, 2016) and ABS projection data.
     # It must be a long format table with the following structure.
@@ -38,254 +33,91 @@ CreatePopulationMaster <- function() {
     #						
     # TODO -> Based on census datasets (2006,2011,2016) estimate a NUMP distribution for YARP > 2018  by LGA and ISO3.						
     #
-    # As a validation exercise the aust.LGA cohort is duplicated into male & female and LGA aggregated
-    # This done to validate the model runtime. It must be fixed!
 
-    pop.master.male <- aust.LGA[, .(NUMP = .5 * sum(NUMP), LTBP = .5 * sum(LTBP), AGERP = AGEP - (2016 - YARP), SEXP = "Male"), by = c("AGEP", "ISO3", "YARP")]
-    pop.master.female <- pop.master.male[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP, SEXP = "Female")]
 
-    pop.master <- rbind(pop.master.male, pop.master.female)
-    rm(pop.master.female, pop.master.male)
+
+    pop.master <- aust.vic[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP = AGEP - (2016L - YARP), SEXP)]
+
 
     # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017 to 2025.
     # again this is for validating the model at runtime.
 
-    pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2020, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2021, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2022, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2023, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2024, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2028 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2028, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2029 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2029, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2030 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2030, NUMP, LTBP, AGERP, SEXP),]
+    # deleted 2016 due to it being a census year with 1/2 half.
+    pop.master <- pop.master[YARP != 2016]
 
 
-    pop.master <- rbind(pop.master, pop.master.2017, pop.master.2018, pop.master.2019,
+
+    pop.master.2016 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2016L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2020L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2021L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2022L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2023L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2024L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2028 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2028L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2029 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2029L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2030 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2030L, NUMP, LTBP, AGERP, SEXP),]
+
+
+    pop.master <- rbind(pop.master, pop.master.2016, pop.master.2017, pop.master.2018, pop.master.2019,
                         pop.master.2020, pop.master.2021, pop.master.2022, pop.master.2023,
                         pop.master.2024, pop.master.2025, pop.master.2026, pop.master.2027,
                         pop.master.2028, pop.master.2029, pop.master.2030)
 
-    rm(pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
+    rm(pop.master.2016, pop.master.2017, pop.master.2018, pop.master.2019, pop.master.2020, pop.master.2021,
        pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025, pop.master.2026,
        pop.master.2027, pop.master.2028, pop.master.2029, pop.master.2030)
 
-    # Must order the pop.master table by YARP due to subsetting and recombining. 
+    # Must order the pop.master table by YARP due to sub-setting and recombining. 
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
 
-    # Remove australian born and calculate the susceptible and latent population
+    # Remove Australian born and calculate the susceptible and latent population
     # TODO - Fix this! It is hard coded for 23 states.
     pop.master <- pop.master[, cycle := as.integer(NA)]
+    pop.master <- pop.master[, (new.state.names) := as.numeric(NA)]
     pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
-    pop.master <- pop.master[, c(paste("V.", state.names, sep = "")) := NA]
     # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
 
     # Create a age at arrival column AGERP
-    # Not correct for YARP after 2016.
-    pop.master <- pop.master[, AGERP := AGEP - (2016 - YARP)]
-
-}
-
-
-ModifyPop <- function(pop.master, arglist) {
-
-    arglist$drop.state.name()
-    x <- aperm(arglist$show.list(), c(2, 1))
+    pop.master[YARP < 2016, AGERP := AGEP - (2016L - YARP)]
+    pop.master[YARP == 2016, AGERP := AGEP]
+    pop.master[YARP > 2016, AGERP := AGEP - 1L] # because it's is the 2015 cohort that's replicated for 2017 to 2030.
 
 
-    pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
-                      p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
-                      p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
+    if (Modify) {
 
-    pop.master[, c("p.sus", "p.ltbi") := 0]
+        # recheck this logic! Only for S1 100% off-shore testing.
+        # Making the cohort one year younger and starting them from 2019 in p.sus and p.ltbi.
+        pop.master[YARP >= 2019, AGEP := AGEP - 1L]
+
+    }
 
     pop.master
 
 }
 
-# Utility functions for data cleansing and reshaping
-FixFertility <- function(hf, mf, lf) {
 
-    # Prepares the fertility data into a data.table.
+#ModifyPop <- function(pop.master, arglist) {
 
-    # Args: 
-    #   hf: a data.table of high fertility rates.
-    #   mf: a data.table of medium fertility rates.
-    #   lf: a data.table of low fertility rates.
-    #
-    # Return:
-    #   a data.table with age, year, rate and fertility as columns.
-
-    names(hf) <- c("Age", 2017:2027)
-    names(mf) <- c("Age", 2017:2027)
-    names(lf) <- c("Age", 2017:2027)
-
-    hf.firstrow <- which(hf$"2017" == "Victoria") + 2
-    hf.lastrow <- which(hf$"2017" == "Queensland") - 4
-
-    mf.firstrow <- which(mf$"2017" == "Victoria") + 2
-    mf.lastrow <- which(mf$"2017" == "Queensland") - 4
-
-    lf.firstrow <- which(lf$"2017" == "Victoria") + 2
-    lf.lastrow <- which(lf$"2017" == "Queensland") - 4
-
-    hf <- hf[hf.firstrow:hf.lastrow,,]
-    mf <- mf[mf.firstrow:mf.lastrow,,]
-    lf <- lf[lf.firstrow:lf.lastrow,,]
-
-    hf$"2017" <- as.numeric(hf$"2017")
-    mf$"2017" <- as.numeric(mf$"2017")
-    lf$"2017" <- as.numeric(lf$"2017")
-
-    hf$Age <- as.integer(hf$Age)
-    mf$Age <- as.integer(mf$Age)
-    lf$Age <- as.integer(lf$Age)
-
-    hf <- melt(hf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
-    mf <- melt(mf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
-    lf <- melt(lf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
-
-    hf$Year <- as.integer(hf$Year)
-    mf$Year <- as.integer(mf$Year)
-    lf$Year <- as.integer(lf$Year)
-
-    hf[, frate := .("High"),]
-    mf[, frate := .("Med"),]
-    lf[, frate := .("Low"),]
+#arglist$drop.state.name()
+#x <- aperm(arglist$show.list(), c(2, 1))
 
 
+#pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
+#p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
+#p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
 
-    return(rbind(hf, mf, lf))
+#pop.master[, c("p.sus", "p.ltbi") := 0]
 
-}
+#pop.master
 
-FixMortality <- function(hm, mm) {
+#}
 
-    # Prepares the mortality data into a table.
-
-    # Args: 
-    #   hm: a data.table of high mortality rates
-    #   mm: a data.table of medium mortality rates
-
-    # Return:
-    #   a data.table with age, year, proportion and mortality as dimensions.
-
-    hm <- hm[7:nrow(hm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-    mm <- mm[7:nrow(mm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-
-    names(hm) <- c("Year", "Age", "Male", "Female")
-    names(mm) <- c("Year", "Age", "Male", "Female")
-
-    hm$Age <- as.integer(hm$Age)
-    mm$Age <- as.integer(mm$Age)
-
-
-    hm <- melt(hm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-    mm <- melt(mm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-
-    hm$Year <- as.integer(hm$Year)
-    mm$Year <- as.integer(mm$Year)
-
-    hm$Rate <- as.numeric(hm$Rate)
-    mm$Rate <- as.numeric(mm$Rate)
-
-    hm[, mrate := .("High"),]
-    mm[, mrate := .("Med"),]
-
-
-    return(rbind(hm, mm))
-
-}
-
-FixMigration <- function(hma, hmd, mma, mmd, lma, lmd) {
-
-    # Prepares the migration data into an table.
-
-    # Args: 
-    #   hma: a data.table of high migration arrival rates
-    #   hmd: a data.table of high migration departure rates
-    #   mma: a data.table of medium migration arrival rates
-    #   mmd: a data.table of medium migration departure rates
-    #   lma: a data.table of high migration arrival rates
-    #   lmd: a data.table of high migration departure rates
-
-    # Return:
-    #   a data.table with age, year, proportion and mortality as dimensions.
-
-    #hma <- vic.high.migration.arrivals
-    #hmd <- vic.high.migration.departures
-    #mma <- vic.medium.migration.arrivals
-    #mmd <- vic.medium.migration.departures
-    #lma <- vic.low.migration.arrivals
-    #lmd <- vic.low.migration.departures
-
-    hma <- hma[8:nrow(hma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-    hmd <- hmd[8:nrow(hmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-
-    mma <- hma[8:nrow(mma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-    mmd <- mmd[8:nrow(mmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-
-    lma <- lma[8:nrow(lma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-    lmd <- lmd[8:nrow(lmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
-
-    names(hma) <- c("Year", "Age", "Male", "Female")
-    names(hmd) <- c("Year", "Age", "Male", "Female")
-    names(mma) <- c("Year", "Age", "Male", "Female")
-    names(mmd) <- c("Year", "Age", "Male", "Female")
-    names(lma) <- c("Year", "Age", "Male", "Female")
-    names(lmd) <- c("Year", "Age", "Male", "Female")
-
-    hma$Age <- as.integer(hma$Age)
-    hmd$Age <- as.integer(hmd$Age)
-
-    mma$Age <- as.integer(mma$Age)
-    mmd$Age <- as.integer(mmd$Age)
-
-    lma$Age <- as.integer(lma$Age)
-    lmd$Age <- as.integer(lmd$Age)
-
-    hma <- melt(hma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-    hmd <- melt(hmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-
-    mma <- melt(mma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-    mmd <- melt(mmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-
-    lma <- melt(lma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-    lmd <- melt(lmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
-
-    hma$Year <- as.integer(hma$Year)
-    hmd$Year <- as.integer(hmd$Year)
-
-    mma$Year <- as.integer(mma$Year)
-    mmd$Year <- as.integer(mmd$Year)
-
-    lma$Year <- as.integer(lma$Year)
-    lmd$Year <- as.integer(lmd$Year)
-
-    hma$Rate <- as.numeric(hma$Rate)
-    hmd$Rate <- as.numeric(hmd$Rate)
-    mma$Rate <- as.numeric(mma$Rate)
-    mmd$Rate <- as.numeric(mmd$Rate)
-    lma$Rate <- as.numeric(lma$Rate)
-    lmd$Rate <- as.numeric(lmd$Rate)
-
-    hma[, c("Flow", "mrate") := .("Arrival", "High"),]
-    hmd[, c("Flow", "mrate") := .("Departure", "High"),]
-
-    mma[, c("Flow", "mrate") := .("Arrival", "Medium"),]
-    mmd[, c("Flow", "mrate") := .("Departure", "Medium"),]
-
-    lma[, c("Flow", "mrate") := .("Arrival", "Low"),]
-    lmd[, c("Flow", "mrate") := .("Departure", "Low"),]
-
-    return(rbind(hma, hmd, mma, mmd, lma, lmd))
-
-}
 
 CreateRDSDataFiles <- function() {
     # Uses the FixFertility, Fix Mortality & FixMigration functions to create RDS data.table objects.
@@ -295,10 +127,190 @@ CreateRDSDataFiles <- function() {
 
     # Return:
     #   No returns, but it saves the following *.rds data object in the ./Data folder
-    #   vic.pop.rds - ABS victoria population projections
-    #   vic.fertility.rds - ABS victoria fertility projections
-    #   vic.mortality.rds - ABS victoria mortality projections
-    #   vic.migration.rds - ABS victoria migration projections
+    #   vic.pop.rds - ABS Victoria population projections
+    #   vic.fertility.rds - ABS Victoria fertility projections
+    #   vic.mortality.rds - ABS Victoria mortality projections
+    #   vic.migration.rds - ABS Victoria migration projections
+
+
+    # Utility functions for data cleansing and reshaping
+    FixFertility <- function(hf, mf, lf) {
+
+        # Prepares the fertility data into a data.table.
+
+        # Args: 
+        #   hf: a data.table of high fertility rates.
+        #   mf: a data.table of medium fertility rates.
+        #   lf: a data.table of low fertility rates.
+        #
+        # Return:
+        #   a data.table with age, year, rate and fertility as columns.
+
+        names(hf) <- c("Age", 2017:2027)
+        names(mf) <- c("Age", 2017:2027)
+        names(lf) <- c("Age", 2017:2027)
+
+        hf.firstrow <- which(hf$"2017" == "Victoria") + 2
+        hf.lastrow <- which(hf$"2017" == "Queensland") - 4
+
+        mf.firstrow <- which(mf$"2017" == "Victoria") + 2
+        mf.lastrow <- which(mf$"2017" == "Queensland") - 4
+
+        lf.firstrow <- which(lf$"2017" == "Victoria") + 2
+        lf.lastrow <- which(lf$"2017" == "Queensland") - 4
+
+        hf <- hf[hf.firstrow:hf.lastrow,,]
+        mf <- mf[mf.firstrow:mf.lastrow,,]
+        lf <- lf[lf.firstrow:lf.lastrow,,]
+
+        hf$"2017" <- as.numeric(hf$"2017")
+        mf$"2017" <- as.numeric(mf$"2017")
+        lf$"2017" <- as.numeric(lf$"2017")
+
+        hf$Age <- as.integer(hf$Age)
+        mf$Age <- as.integer(mf$Age)
+        lf$Age <- as.integer(lf$Age)
+
+        hf <- melt(hf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+        mf <- melt(mf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+        lf <- melt(lf, id.vars = "Age", variable.factor = F, variable.name = "Year", value.name = "Rate")
+
+        hf$Year <- as.integer(hf$Year)
+        mf$Year <- as.integer(mf$Year)
+        lf$Year <- as.integer(lf$Year)
+
+        hf[, frate := .("High"),]
+        mf[, frate := .("Med"),]
+        lf[, frate := .("Low"),]
+
+
+
+        return(rbind(hf, mf, lf))
+
+    }
+
+    FixMortality <- function(hm, mm) {
+
+        # Prepares the mortality data into a table.
+
+        # Args: 
+        #   hm: a data.table of high mortality rates
+        #   mm: a data.table of medium mortality rates
+
+        # Return:
+        #   a data.table with age, year, proportion and mortality as dimensions.
+
+        hm <- hm[7:nrow(hm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+        mm <- mm[7:nrow(mm), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+        names(hm) <- c("Year", "Age", "Male", "Female")
+        names(mm) <- c("Year", "Age", "Male", "Female")
+
+        hm$Age <- as.integer(hm$Age)
+        mm$Age <- as.integer(mm$Age)
+
+
+        hm <- melt(hm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+        mm <- melt(mm, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+        hm$Year <- as.integer(hm$Year)
+        mm$Year <- as.integer(mm$Year)
+
+        hm$Rate <- as.numeric(hm$Rate)
+        mm$Rate <- as.numeric(mm$Rate)
+
+        hm[, mrate := .("High"),]
+        mm[, mrate := .("Med"),]
+
+
+        return(rbind(hm, mm))
+
+    }
+
+    FixMigration <- function(hma, hmd, mma, mmd, lma, lmd) {
+
+        # Prepares the migration data into an table.
+
+        # Args: 
+        #   hma: a data.table of high migration arrival rates
+        #   hmd: a data.table of high migration departure rates
+        #   mma: a data.table of medium migration arrival rates
+        #   mmd: a data.table of medium migration departure rates
+        #   lma: a data.table of high migration arrival rates
+        #   lmd: a data.table of high migration departure rates
+
+        # Return:
+        #   a data.table with age, year, proportion and mortality as dimensions.
+
+        #hma <- vic.high.migration.arrivals
+        #hmd <- vic.high.migration.departures
+        #mma <- vic.medium.migration.arrivals
+        #mmd <- vic.medium.migration.departures
+        #lma <- vic.low.migration.arrivals
+        #lmd <- vic.low.migration.departures
+
+        hma <- hma[8:nrow(hma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+        hmd <- hmd[8:nrow(hmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+        mma <- hma[8:nrow(mma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+        mmd <- mmd[8:nrow(mmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+        lma <- lma[8:nrow(lma), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+        lmd <- lmd[8:nrow(lmd), c("Australian Bureau of Statistics", "..2", "..4", "..14")]
+
+        names(hma) <- c("Year", "Age", "Male", "Female")
+        names(hmd) <- c("Year", "Age", "Male", "Female")
+        names(mma) <- c("Year", "Age", "Male", "Female")
+        names(mmd) <- c("Year", "Age", "Male", "Female")
+        names(lma) <- c("Year", "Age", "Male", "Female")
+        names(lmd) <- c("Year", "Age", "Male", "Female")
+
+        hma$Age <- as.integer(hma$Age)
+        hmd$Age <- as.integer(hmd$Age)
+
+        mma$Age <- as.integer(mma$Age)
+        mmd$Age <- as.integer(mmd$Age)
+
+        lma$Age <- as.integer(lma$Age)
+        lmd$Age <- as.integer(lmd$Age)
+
+        hma <- melt(hma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+        hmd <- melt(hmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+        mma <- melt(mma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+        mmd <- melt(mmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+        lma <- melt(lma, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+        lmd <- melt(lmd, id.vars = c("Age", "Year"), variable.factor = F, variable.name = "Sex", value.name = "Rate")
+
+        hma$Year <- as.integer(hma$Year)
+        hmd$Year <- as.integer(hmd$Year)
+
+        mma$Year <- as.integer(mma$Year)
+        mmd$Year <- as.integer(mmd$Year)
+
+        lma$Year <- as.integer(lma$Year)
+        lmd$Year <- as.integer(lmd$Year)
+
+        hma$Rate <- as.numeric(hma$Rate)
+        hmd$Rate <- as.numeric(hmd$Rate)
+        mma$Rate <- as.numeric(mma$Rate)
+        mmd$Rate <- as.numeric(mmd$Rate)
+        lma$Rate <- as.numeric(lma$Rate)
+        lmd$Rate <- as.numeric(lmd$Rate)
+
+        hma[, c("Flow", "mrate") := .("Arrival", "High"),]
+        hmd[, c("Flow", "mrate") := .("Departure", "High"),]
+
+        mma[, c("Flow", "mrate") := .("Arrival", "Medium"),]
+        mmd[, c("Flow", "mrate") := .("Departure", "Medium"),]
+
+        lma[, c("Flow", "mrate") := .("Arrival", "Low"),]
+        lmd[, c("Flow", "mrate") := .("Departure", "Low"),]
+
+        return(rbind(hma, hmd, mma, mmd, lma, lmd))
+
+    }
 
 
     # Loading ABS population projections for Victoria 2017-2025
@@ -351,25 +363,90 @@ CreateRDSDataFiles <- function() {
 
     # Create and save TB mortality rates
     vic.tb.mortality <- fread("Data/TBmortality_VIC_2002_2013.csv")
-    vic.tb.mortality <- vic.tb.mortality[sex != "both"][, .(age, sex, rate = (died / total) / (2014 - 2002))]
-    vic.tb.mortality[sex == "male", sex := "Mmale"]
+    vic.tb.mortality <- vic.tb.mortality[sex != "both"][, .(age, sex, rate = (died / total))]
+    vic.tb.mortality[sex == "male", sex := "Male"]
     vic.tb.mortality[sex == "female", sex := "Female"]
-    saveRDS(vic.tb.mortality , "Data/vic.tb.mortality.rds")
+    saveRDS(vic.tb.mortality, "Data/vic.tb.mortality.rds")
+
+}
+
+
+CreateOutput <- function(DT, strategy, test, treatment) {
+    
+    DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
+
+    DT <- DT[, c(124:126, 1:123)]
+
+            
+    colsToSum <- names(DT)[c(7, 8, 12:126)]
+
+    DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
+
+    # State count table
+    DT.S <- DT[, c(1:9, 10:32)]
+    fwrite(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
+    #DT.S <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
+    #saveRDS(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.rds", sep = ""))
+
+
+    # Flow count table
+    DT.F <- DT[, c(1:9, 33:55)]
+    colnames(DT.F) <- gsub("V.", "", colnames(DT.F))
+    fwrite(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.csv", sep = ""))
+    #DT.F <- fread(file = paste("Data/Output/",strategy,"_",test,"_", treatment, "_F.csv", sep =""))
+    #saveRDS(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.rds", sep = ""))
 
 
 
+    # State cost table
+    DT.SC <- DT[, c(1:9, 56:78)]
+    colnames(DT.SC) <- gsub("SC.", "", colnames(DT.SC))
+    fwrite(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep = ""))
+    #DT.SC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep =""))
+    #saveRDS(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.rds", sep = ""))
+
+
+    # Flow cost table
+    DT.FC <- DT[, c(1:9, 79:101)]
+    colnames(DT.FC) <- gsub("FC.", "", colnames(DT.FC))
+    fwrite(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
+    #DT.FC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
+    #saveRDS(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.rds", sep = ""))
+
+    DT.SQ <- DT[, c(1:9, 102:124)]
+    colnames(DT.SQ) <- gsub("SQ.", "", colnames(DT.SQ))
+    fwrite(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
+    #DT.SQ <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
+    #saveRDS(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.rds", sep = ""))
 
 }
 
 
 
 
+
+
+
+
+Readdata <- function(fn) {
+    dt_temp <- fread(paste("Data/Output/",fn,sep = ""), sep = ",")
+
+    dt_temp
+
+}
+
+
+
+
+
+
+
 #strategy <- DefineStrategy(
 
-  #transition = transMatrix,
-  #p.sus = p.sus,
-  #p.death = p.death,
-  #p.ltbi = p.ltbi
+#transition = transMatrix,
+#p.sus = p.sus,
+#p.death = p.death,
+#p.ltbi = p.ltbi
 #)
 
 
@@ -379,4 +456,57 @@ CreateRDSDataFiles <- function() {
 #state.measures <- c("QALY", "Cost of TST", "Cost of IGRA", "Cost of 4R", "Cost of hospitalisation")
 
 #state.value.matrix <- array(NA, dim = c(length(state.names), length(state.measures), cycles),
-                            #dimnames = list(states = state.names, measures = state.measures, cycles = 1:cycles))
+#dimnames = list(states = state.names, measures = state.measures, cycles = 1:cycles))
+# Creates an unevaluated transition matrix
+# Use 'CMP' for complement and 'param$*' for parameters.
+# Each parameter must be a pair-list argument in DefineParameters().
+#transMatrix4R <- DefineTransition(
+#CMP, param$POP * (1 - param$TESTSP) * param$TREATR, param$POP * (1 - param$TESTSP) * (1 - param$TREATR), 0, param$POP * param$TESTSP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, CMP, param$POP * param$TESTSN * param$TREATR, 0, 0, 0, param$POP * param$TESTSN * (1 - param$TREATR), 0, 0, param$POP * (1 - param$TESTSN), 0, 0, param$RR, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, CMP, 0.04 * param$RR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, param$TBMR, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, param$RR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, param$TBMR, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, param$RR, 0, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$TBMR, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, param$TBMR, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, state.names = state.names)
+
+## Baseline transition matrix
+#transMatrixBaseline <- DefineTransition(CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$RR, 0, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, param$TBMR, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$MR,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+#state.names = state.names)

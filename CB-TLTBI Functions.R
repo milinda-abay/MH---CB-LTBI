@@ -33,6 +33,30 @@ DefineParameters <- function(...) {
     structure(unevaluated.parameter.list, class = c("uneval_parameters", class(unevaluated.parameter.list)))
 }
 
+DefineStates <- function(...) {
+
+    state.values <- lazyeval::lazy_dots(...)
+    structure(state.values, class = c("state", class(state.values)))
+
+}
+
+
+DefineStrategy <- function(..., transition.matrix) {
+    # TODO - find a way to pass the state.names vector and create the state objects
+    # using CreateStates and DefineStates.
+    # Have a list of named states per state.names
+
+    state.list <- list(...)
+    states <- structure(state.list, class = c("uneval_state_list", class(state.list)))
+    names(states) <- state.names
+    structure(list(transition = transition.matrix, states = states),
+              class = "uneval_model")
+
+}
+
+
+
+
 
 # The following functions perform various calculations at model runtime.
 #------------------------------------------------------------------------#
@@ -62,7 +86,7 @@ CreateArgumentList <- function(state.names, state.number) {
     arglist <- rep(list(NA), state.number ^ 2)
     dim(arglist) <- c(state.number, state.number)
 
-    # Returns a list of functions and attaches it to the calling object.
+    # Return a list of functions attached to the calling object.
     list(
 
     update.list = function(listvalues) { arglist[] <<- listvalues },
@@ -71,13 +95,17 @@ CreateArgumentList <- function(state.names, state.number) {
         #because it is column-wise
         arglist[, row] <<- rowvalues
     },
-    update.cell = function(row, col, value) { arglist[[row, col]] <<- value },
-    show.list = function() arglist,
+    update.cell = function(row, col, value) { arglist[[col, row]] <<- value },
+    show.list = function() aperm(arglist, c(2, 1)),
     add.state.name = function(state.names) {
         arglist[[state.number ^ 2 + 1]] <<- state.names
         names(arglist)[state.number ^ 2 + 1] <<- "state.names"
     },
+    show.row = function(row) {
 
+        arglist[, row]
+
+    },
     drop.state.name = function() {
         arglist[state.number ^ 2 + 1] <<- NULL
         dim(arglist) <<- c(state.number, state.number)
@@ -120,27 +148,55 @@ Get.TBMR <- function(DT, year) {
 
 }
 
-
 # look up test sensitivity / specificity 
-Get.TEST <- function(S) {
+Get.TEST <- function(S, testing) {
 
     as.numeric(tests.dt[tests == testing, ..S])
 
 }
 
 # look up treatment completion rate
-Get.TREATR <- function() {
+Get.TREAT <- function(S, treat) {
 
-    0.6818
+    as.numeric(treatment.dt[treatment == treat, ..S])
 
 }
 
 # look up target population percentage
-Get.POP <- function() {
+Get.POP <- function(DT, strategy) {
 
-    .6
+    
+    ifelse(DT$YARP < 2020,
+           switch(strategy$myname,
+                  BO = 0,
+                  S1 = 1,
+                  S2 = 0,
+                  S3 = 0.05,
+                  S4 = 0.10,
+                  S5 = 0.15,
+                  0
+                  ),
+                  0.6
+                  )
 
 }
+
+
+Get.UTILITY <- function(t) {
+
+    as.numeric(utility.dt[treatment == t][, 2:24])
+
+}
+
+
+Get.DISCOUNT <- function() {
+
+    .03
+
+}
+
+
+
 
 
 # Calculates the CMP value after evaluation of the promise objects in parameter and transition matrix.
@@ -177,7 +233,7 @@ CalculateCMP <- function(tM, l, z) {
 
 
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
-PerformMatrixMultiplication <- function(dM, tM, l, z) {
+PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, state.cost, utility) {
 
     # Make the current data matrix a list
     bar <- unlist(dM)
@@ -191,23 +247,53 @@ PerformMatrixMultiplication <- function(dM, tM, l, z) {
     dim(foo) <- c(z, l, l)
     foo <- aperm(foo, perm = c(3, 2, 1))
 
-    # Carry out the matrix multiplication with a data.table frame.
-    # Enables iteration and subsetting by using .I
+    # Carry out the matrix multiplication within the dM data.table frame.
+    # By using .I it enables iteration and sub-setting the 3D arrays bar and foo.  
+    # This results in a 2D array and enables matrix multiplication.
 
     flows <- dM[, as.list(bar[,, .I] %*% (foo[,, .I] - diag(diag(foo[,, .I])))), by = seq_len(z)]
 
     counts <- dM[, as.list(matrix(bar[,, .I], ncol = l) %*% foo[,, .I]), by = seq_len(z)]
 
-    return(list(counts, flows))
+    flows <- flows[, - c("seq_len")]
+    counts <- counts[, - c("seq_len")]
+
+    #TODO include discount
+
+    if (markov.cycle == 0) {
+        discount <- 1
+    } else {
+        discount <- (1 - discount) ^ markov.cycle
+    }
+
+    flow.cost <- discount * flow.cost
+    state.cost <- discount * state.cost
+
+    flow.cost <- flows[, Map("*", flow.cost, .SD)]
+    count.cost <- counts[, Map("*", state.cost, .SD)]
+
+
+    state.QALY <- counts[, Map("*", utility, .SD)]
+
+    return(list(counts, flows, count.cost, flow.cost, state.QALY))
 
 }
 
 
-# The primary function RunModel() calls to performs row by row transition calculations.
-GetStateCounts <- function(DT, year) {
+# The primary function RunModel() calls to perform row by row transition calculations.
+GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle) {
+    
+    # collapsing the promise object 
+    testing
+    treatment
+
+    transMatrix <- strategy$transition
+
 
     z <- nrow(DT)
-    l <- sqrt(length(transMatrix))
+    l <- sqrt(length(strategy$transition))
+
+
 
     # assign the current environment for evaluation. 
     # TODO - create a function for multiple parameters
@@ -216,15 +302,31 @@ GetStateCounts <- function(DT, year) {
     parameters$TBMR$env <- environment()
     parameters$TESTSN$env <- environment()
     parameters$TESTSP$env <- environment()
+    parameters$TESTC$env <- environment()
     parameters$TREATR$env <- environment()
+    parameters$TREATC$env <- environment()
     parameters$POP$env <- environment()
+    parameters$UTILITY$env <- environment()
+    parameters$TBCOST$env <- environment()
+
+    unevaluated.flow.cost$env <- environment()
+    unevaluated.state.cost$env <- environment()
+
+
+
 
     # evaluate parameters 
     # NOTE: at this point both Get.MR() and Get.RR() functions are called by the evaluator.
     # Use param$* when using DefineTransition() 
     param <- lazy_eval(parameters)
 
-    # a Hack for YARP < 2016, vic mortality doesnt have data to look up 
+
+
+    flow.cost <- lazy_eval(unevaluated.flow.cost)
+    state.cost <- lazy_eval(unevaluated.state.cost)
+    utility <- param$UTILITY
+
+    # a Hack for YARP < 2016, vic mortality doesn’t have data to look up 
     param$MR[is.na(param$MR)] <- 0.01
     param$RR[is.na(param$RR)] <- 0.0013
     param$TBMR[is.na(param$TBMR)] <- 0.01
@@ -243,7 +345,7 @@ GetStateCounts <- function(DT, year) {
 
     }
 
-    # Evaluates the transition matrix and insert a '-pi' placeholder for CMP.
+    # Evaluates the transition matrix and insert a '-pi' place-holder for CMP.
     tM <- lazy_eval(transMatrix, data = list(CMP = -pi))
 
 
@@ -256,50 +358,53 @@ GetStateCounts <- function(DT, year) {
             tM[[i]] <- rep(tM[[i]], times = z)
         }
     }
-
-
+    
     # Manipulates the tM to calculate the CMP
     tM <- CalculateCMP(tM, l, z)
 
     # Select the numeric state value columns in preparation for multiplication.
     dM <- DT[, ..state.names]
 
-
     print("PMM Start")
     print(Sys.time())
-    results <- PerformMatrixMultiplication(dM, tM, l, z)
+    results <- PerformMatrixMultiplication(dM, tM, l, z, markov.cycle, flow.cost, state.cost, utility)
     print("PMM End")
     print(Sys.time())
 
-    results[[1]] <- results[[1]][, - c("seq_len")]
-    results[[2]] <- results[[2]][, - c("seq_len")]
 
     names(results[[2]]) <- paste("V.", state.names, sep = "")
-
+    names(results[[3]]) <- paste("SC.", state.names, sep = "")
+    names(results[[4]]) <- paste("FC.", state.names, sep = "")
+    names(results[[5]]) <- paste("SQ.", state.names, sep = "")
     # browser() # uncomment for testing
 
-    results <- cbind(results[[1]], results[[2]])
-
-
-
+    results <- cbind(results[[1]], results[[2]], results[[3]], results[[4]], results[[5]])
+         
 }
+
 
 #------------------------------------------------------------------------#
 
 # The main model runtime loop 
-RunModel <- function(pop.output) {
+RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycles) {
+
+    #To keep track of the current strategy name
+    strategy$myname <- deparse(substitute(strategy))
 
     # initialise the calculation object
     pop.calculated <- copy(pop.output)
+
+    year <- start.year # Initialise year with start.year
+    markov.cycle <- 0 # Tracks the current cycle
 
     while (markov.cycle < cycles) {
 
         writeLines(sprintf("\nCommencing Markov cycle %i", markov.cycle))
         writeLines(sprintf("Current number of populations in the working matrix is %i", nrow(pop.calculated)))
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
-
+        
         # The vectorised solution where the entire table is passed to GetStateCounts
-        pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year)]
+        pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year, strategy, testing, treatment, markov.cycle)]
 
         # Update counters
         markov.cycle <- markov.cycle + 1
@@ -330,5 +435,6 @@ RunModel <- function(pop.output) {
         # Saving state in pop.output
         pop.output <- rbind(pop.output, pop.calculated)
     }
+
     pop.output
 }
