@@ -34,9 +34,9 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     # TODO -> Based on census datasets (2006,2011,2016) estimate a NUMP distribution for YARP > 2018  by LGA and ISO3.						
     #
 
-    
 
-    pop.master <- aust.vic[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP = AGEP -(2016L-YARP), SEXP)]
+
+    pop.master <- aust.vic[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP = AGEP - (2016L - YARP), SEXP)]
 
 
     # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017 to 2025.
@@ -73,10 +73,10 @@ CreatePopulationMaster <- function(Modify = FALSE) {
        pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025, pop.master.2026,
        pop.master.2027, pop.master.2028, pop.master.2029, pop.master.2030)
 
-    # Must order the pop.master table by YARP due to subsetting and recombining. 
+    # Must order the pop.master table by YARP due to sub-setting and recombining. 
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
 
-    # Remove australian born and calculate the susceptible and latent population
+    # Remove Australian born and calculate the susceptible and latent population
     # TODO - Fix this! It is hard coded for 23 states.
     pop.master <- pop.master[, cycle := as.integer(NA)]
     pop.master <- pop.master[, (new.state.names) := as.numeric(NA)]
@@ -88,33 +88,33 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     pop.master[YARP == 2016, AGERP := AGEP]
     pop.master[YARP > 2016, AGERP := AGEP - 1L] # because it's is the 2015 cohort that's replicated for 2017 to 2030.
 
-    
+
     if (Modify) {
 
         # recheck this logic! Only for S1 100% off-shore testing.
         # Making the cohort one year younger and starting them from 2019 in p.sus and p.ltbi.
         pop.master[YARP >= 2019, AGEP := AGEP - 1L]
-        
+
     }
 
     pop.master
-    
+
 }
 
 
 #ModifyPop <- function(pop.master, arglist) {
 
-    #arglist$drop.state.name()
-    #x <- aperm(arglist$show.list(), c(2, 1))
+#arglist$drop.state.name()
+#x <- aperm(arglist$show.list(), c(2, 1))
 
 
-    #pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
-                      #p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
-                      #p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
+#pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
+#p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
+#p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
 
-    #pop.master[, c("p.sus", "p.ltbi") := 0]
+#pop.master[, c("p.sus", "p.ltbi") := 0]
 
-    #pop.master
+#pop.master
 
 #}
 
@@ -127,10 +127,10 @@ CreateRDSDataFiles <- function() {
 
     # Return:
     #   No returns, but it saves the following *.rds data object in the ./Data folder
-    #   vic.pop.rds - ABS victoria population projections
-    #   vic.fertility.rds - ABS victoria fertility projections
-    #   vic.mortality.rds - ABS victoria mortality projections
-    #   vic.migration.rds - ABS victoria migration projections
+    #   vic.pop.rds - ABS Victoria population projections
+    #   vic.fertility.rds - ABS Victoria fertility projections
+    #   vic.mortality.rds - ABS Victoria mortality projections
+    #   vic.migration.rds - ABS Victoria migration projections
 
 
     # Utility functions for data cleansing and reshaping
@@ -366,8 +366,8 @@ CreateRDSDataFiles <- function() {
     vic.tb.mortality <- vic.tb.mortality[sex != "both"][, .(age, sex, rate = (died / total))]
     vic.tb.mortality[sex == "male", sex := "Male"]
     vic.tb.mortality[sex == "female", sex := "Female"]
-    saveRDS(vic.tb.mortality , "Data/vic.tb.mortality.rds")
-           
+    saveRDS(vic.tb.mortality, "Data/vic.tb.mortality.rds")
+
 }
 
 
@@ -376,53 +376,77 @@ CreateOutput <- function(DT, strategy, test, treatment) {
     DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
 
     DT <- DT[, c(124:126, 1:123)]
-    
+
+            
+    colsToSum <- names(DT)[c(7, 8, 12:126)]
+
+    DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
+
     # State count table
-    DT.S <- DT[, c(1:11, 12:34)]
+    DT.S <- DT[, c(1:9, 10:32)]
     fwrite(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
     #DT.S <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
     #saveRDS(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.rds", sep = ""))
-    
+
 
     # Flow count table
-    DT.F <- DT[, c(1:11, 35:57)]
+    DT.F <- DT[, c(1:9, 33:55)]
     colnames(DT.F) <- gsub("V.", "", colnames(DT.F))
     fwrite(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.csv", sep = ""))
     #DT.F <- fread(file = paste("Data/Output/",strategy,"_",test,"_", treatment, "_F.csv", sep =""))
     #saveRDS(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.rds", sep = ""))
-    
+
 
 
     # State cost table
-    DT.SC <- DT[, c(1:11, 58:80)]
+    DT.SC <- DT[, c(1:9, 56:78)]
     colnames(DT.SC) <- gsub("SC.", "", colnames(DT.SC))
     fwrite(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep = ""))
     #DT.SC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep =""))
     #saveRDS(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.rds", sep = ""))
-    
+
 
     # Flow cost table
-    DT.FC <- DT[, c(1:11, 81:103)]
+    DT.FC <- DT[, c(1:9, 79:101)]
     colnames(DT.FC) <- gsub("FC.", "", colnames(DT.FC))
     fwrite(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
     #DT.FC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
     #saveRDS(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.rds", sep = ""))
-    
-    DT.SQ <- DT[, c(1:11, 104:126)]
+
+    DT.SQ <- DT[, c(1:9, 102:124)]
     colnames(DT.SQ) <- gsub("SQ.", "", colnames(DT.SQ))
     fwrite(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
+    #DT.SQ <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
+    #saveRDS(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.rds", sep = ""))
 
 }
 
 
 
 
+
+
+
+
+Readdata <- function(fn) {
+    dt_temp <- fread(paste("Data/Output/",fn,sep = ""), sep = ",")
+
+    dt_temp
+
+}
+
+
+
+
+
+
+
 #strategy <- DefineStrategy(
 
-  #transition = transMatrix,
-  #p.sus = p.sus,
-  #p.death = p.death,
-  #p.ltbi = p.ltbi
+#transition = transMatrix,
+#p.sus = p.sus,
+#p.death = p.death,
+#p.ltbi = p.ltbi
 #)
 
 
@@ -432,10 +456,10 @@ CreateOutput <- function(DT, strategy, test, treatment) {
 #state.measures <- c("QALY", "Cost of TST", "Cost of IGRA", "Cost of 4R", "Cost of hospitalisation")
 
 #state.value.matrix <- array(NA, dim = c(length(state.names), length(state.measures), cycles),
-                            #dimnames = list(states = state.names, measures = state.measures, cycles = 1:cycles))
+#dimnames = list(states = state.names, measures = state.measures, cycles = 1:cycles))
 # Creates an unevaluated transition matrix
 # Use 'CMP' for complement and 'param$*' for parameters.
-# Each parameter must be a pairlist argument in DefineParameters().
+# Each parameter must be a pair-list argument in DefineParameters().
 #transMatrix4R <- DefineTransition(
 #CMP, param$POP * (1 - param$TESTSP) * param$TREATR, param$POP * (1 - param$TESTSP) * (1 - param$TREATR), 0, param$POP * param$TESTSP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
 #0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
