@@ -76,17 +76,17 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     # Must order the pop.master table by YARP due to sub-setting and recombining. 
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
 
-    # Remove Australian born and calculate the susceptible and latent population
+    # Calculate the susceptible and latent population
     # TODO - Fix this! It is hard coded for 23 states.
     pop.master <- pop.master[, cycle := as.integer(NA)]
     pop.master <- pop.master[, (new.state.names) := as.numeric(NA)]
-    pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
-    # pop.master <- pop.master[ISO3 != "AUS"][, (state.names) := .(NUMP - LTBP, LTBP, 0, 0, 0)]
+    pop.master <- pop.master[, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
+    
 
     # Create a age at arrival column AGERP
     pop.master[YARP < 2016, AGERP := AGEP - (2016L - YARP)]
     pop.master[YARP == 2016, AGERP := AGEP]
-    pop.master[YARP > 2016, AGERP := AGEP - 1L] # because it's is the 2015 cohort that's replicated for 2017 to 2030.
+    pop.master[YARP > 2016, AGERP := AGEP - 1L] # because the 2015 cohort is replicated for 2017 to 2030.
 
 
     if (Modify) {
@@ -354,6 +354,21 @@ CreateRDSDataFiles <- function() {
     # Create and save mortality rates table
     vic.mortality <- FixMortality(vic.high.mortality, vic.medium.mortality)
     rm(vic.high.mortality, vic.medium.mortality)
+    vic.mortality.101 <- vic.mortality[Age == 100][, Age := 101]
+    vic.mortality.102 <- vic.mortality[Age == 100][, Age := 102]
+    vic.mortality.103 <- vic.mortality[Age == 100][, Age := 103]
+    vic.mortality.104 <- vic.mortality[Age == 100][, Age := 104]
+    vic.mortality.105 <- vic.mortality[Age == 100][, Age := 105]
+    vic.mortality.106 <- vic.mortality[Age == 100][, Age := 106]
+    vic.mortality.107 <- vic.mortality[Age == 100][, Age := 107]
+    vic.mortality.108 <- vic.mortality[Age == 100][, Age := 108]
+    vic.mortality.109 <- vic.mortality[Age == 100][, Age := 109]
+    vic.mortality.110 <- vic.mortality[Age == 100][, Age := 110]
+
+    vic.mortality <- rbind(vic.mortality, vic.mortality.101, vic.mortality.102, vic.mortality.103, vic.mortality.104,
+                       vic.mortality.105, vic.mortality.106, vic.mortality.107, vic.mortality.108,
+                       vic.mortality.109, vic.mortality.110)
+    vic.mortality[, Prob := RateToProb(Rate)]
     saveRDS(vic.mortality, "Data/vic.mortality.rds")
 
     #Create and save migration rates table
@@ -363,9 +378,11 @@ CreateRDSDataFiles <- function() {
 
     # Create and save TB mortality rates
     vic.tb.mortality <- fread("Data/TBmortality_VIC_2002_2013.csv")
-    vic.tb.mortality <- vic.tb.mortality[sex != "both"][, .(age, sex, rate = (died / total))]
+    vic.tb.mortality <- vic.tb.mortality[sex != "both"]
     vic.tb.mortality[sex == "male", sex := "Male"]
     vic.tb.mortality[sex == "female", sex := "Female"]
+    vic.tb.mortality[, Prob := RateToProb(Rate)]
+
     saveRDS(vic.tb.mortality, "Data/vic.tb.mortality.rds")
 
 }
@@ -376,21 +393,39 @@ CreateOutput <- function(DT, strategy, test, treatment) {
     DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
 
     DT <- DT[, c(124:126, 1:123)]
+    browser()
 
-            
-    colsToSum <- names(DT)[c(7, 8, 12:126)]
+    colnames(DT)
 
-    DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
+    cyc <- which(colnames(DT) == "cycle")
+    psus <- which(colnames(DT) == "p.sus")
+    pdeath <- which(colnames(DT) == "p.death")
+    Vpsus <- which(colnames(DT) == "V.p.sus")
+    Vpdeath <- which(colnames(DT) == "V.p.death")
+    SCpsus <- which(colnames(DT) == "SC.p.sus")
+    SCpdeath <- which(colnames(DT) == "SC.p.death")
+    FCpsus <- which(colnames(DT) == "FC.p.sus")
+    FCpdeath <- which(colnames(DT) == "FC.p.death")
+    SQpsus <- which(colnames(DT) == "SQ.p.sus")
+    SQpdeath <- which(colnames(DT) == "SQ.p.death")
+
+
+
+
+
+    #colsToSum <- names(DT)[c(7, 8, 12:126)]
+
+    #DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
 
     # State count table
-    DT.S <- DT[, c(1:9, 10:32)]
+    DT.S <- DT[, c(1:..cyc, ..psus:..pdeath)]
     fwrite(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
     #DT.S <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
     #saveRDS(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.rds", sep = ""))
 
 
     # Flow count table
-    DT.F <- DT[, c(1:9, 33:55)]
+    DT.F <- DT[, c(1:..cyc, ..Vpsus:..Vpdeath)]
     colnames(DT.F) <- gsub("V.", "", colnames(DT.F))
     fwrite(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.csv", sep = ""))
     #DT.F <- fread(file = paste("Data/Output/",strategy,"_",test,"_", treatment, "_F.csv", sep =""))
@@ -399,7 +434,7 @@ CreateOutput <- function(DT, strategy, test, treatment) {
 
 
     # State cost table
-    DT.SC <- DT[, c(1:9, 56:78)]
+    DT.SC <- DT[, c(1:..cyc, ..SCpsus:..SCpdeath)]
     colnames(DT.SC) <- gsub("SC.", "", colnames(DT.SC))
     fwrite(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep = ""))
     #DT.SC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep =""))
@@ -407,25 +442,19 @@ CreateOutput <- function(DT, strategy, test, treatment) {
 
 
     # Flow cost table
-    DT.FC <- DT[, c(1:9, 79:101)]
+    DT.FC <- DT[, c(1:..cyc, ..FCpsus:..FCpdeath)]
     colnames(DT.FC) <- gsub("FC.", "", colnames(DT.FC))
     fwrite(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
     #DT.FC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
     #saveRDS(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.rds", sep = ""))
 
-    DT.SQ <- DT[, c(1:9, 102:124)]
+    DT.SQ <- DT[, c(1:..cyc, ..SQpsus:..SQpdeath)]
     colnames(DT.SQ) <- gsub("SQ.", "", colnames(DT.SQ))
     fwrite(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
     #DT.SQ <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
     #saveRDS(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.rds", sep = ""))
 
 }
-
-
-
-
-
-
 
 
 Readdata <- function(fn) {
@@ -435,7 +464,15 @@ Readdata <- function(fn) {
 
 }
 
-
+RateToProb <- function(r, to = 1, per = 1) {
+    stopifnot(
+    r >= 0,
+    to > 0,
+    per > 0
+  )
+    r <- r / per
+    1 - exp(-r * to)
+}
 
 
 

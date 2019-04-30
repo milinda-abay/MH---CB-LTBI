@@ -130,7 +130,7 @@ CreateArgumentList <- function(state.names, state.number) {
 # Look up the mortality rate from vic.mortality
 Get.MR <- function(DT, year, rate.assumption = "High") {
 
-    vic.mortality[Year == year & mrate == rate.assumption][DT, Rate, on = .(Age = AGEP, Sex = SEXP)]
+    vic.mortality[Year == year & mrate == rate.assumption][DT, Prob, on = .(Age = AGEP, Sex = SEXP)]
 
 }
 
@@ -142,9 +142,15 @@ Get.RR <- function(DT, year) {
 }
 
 # look up TB mortality rate
-Get.TBMR <- function(DT, year) {
+Get.TBMR <- function(xDT, year) {
+    
+    DT <- copy(xDT[,.(AGEP, SEXP)])
 
-    vic.tb.mortality[DT[, .(AGEP, SEXP)], rate, on = .(age = AGEP, sex = SEXP)]
+    # To lookup all ages beyond 95 & 97
+    DT[AGEP > 95 & SEXP == "Male", AGEP := 95]
+    DT[AGEP > 97 & SEXP == "Female", AGEP := 97]
+
+    vic.tb.mortality[DT[, .(AGEP, SEXP)], Prob, on = .(age = AGEP, sex = SEXP)]
 
 }
 
@@ -201,7 +207,7 @@ Get.DISCOUNT <- function() {
 
 # Calculates the CMP value after evaluation of the promise objects in parameter and transition matrix.
 CalculateCMP <- function(tM, l, z) {
-
+    
     y <- unlist(tM)
 
     dim(y) <- c(z, l, l)
@@ -217,6 +223,11 @@ CalculateCMP <- function(tM, l, z) {
 
     # dropping the 3rd dimension in order to select the rowSums in sequence.
     valC <- 1 - rowSums(y, dims = 2)[which(posC, arr.ind = TRUE)[, -3]]
+
+    if (any(valC < 0)) {
+        stop("Negative CMP value")
+
+    }
 
     # inserting the values back in
     y[posC] <- valC
@@ -321,12 +332,12 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     param <- lazy_eval(parameters)
 
 
-
     flow.cost <- lazy_eval(unevaluated.flow.cost)
     state.cost <- lazy_eval(unevaluated.state.cost)
     utility <- param$UTILITY
 
-    # a Hack for YARP < 2016, vic mortality doesn’t have data to look up 
+    # a Hack for YARP < 2016, vic mortality doesn’t have data to look up
+    
     param$MR[is.na(param$MR)] <- 0.01
     param$RR[is.na(param$RR)] <- 0.0013
     param$TBMR[is.na(param$TBMR)] <- 0.01

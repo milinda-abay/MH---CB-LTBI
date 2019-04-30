@@ -34,7 +34,8 @@ source("CB-TLTBI functions.R")
 # Read the data files (if required)
 
 # aust <- readRDS("Data/aust.rds")
-aust.vic <- readRDS("Data/aust.vic.LGA.rds") # this is required. Change to 'aust.vic.rds' for S1,S2,S3,S4 and S5
+aust.vic <- readRDS("Data/aust.vic.rds") # this is required for S1,S2,S3,S4 and S5
+aust.vic.LGA <- readRDS("Data/aust.vic.LGA.rds") # this is for S0
 # prob.Inf <- readRDS("Data/prob.Inf.rds") 
 # tbhaz.200rep <- readRDS("Data/tbhaz.200rep.rds")
 # tbhaz.5000rep <- readRDS("Data/tbhaz.5000rep.rds")
@@ -55,7 +56,7 @@ state.names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn"
 # Number of states
 state.number <- length(state.names)
 
-# a hack to manage the flows, state.cost and flow.cost values.
+# a hack to manage the flows, state.cost, flow.cost and state.qaly values.
 new.state.names <- c(state.names, paste("V.", state.names, sep = ""),
                      paste("SC.", state.names, sep = ""),
                      paste("FC.", state.names, sep = ""),
@@ -127,8 +128,8 @@ arglist <- CreateArgumentList(state.names, state.number)
 # arglist$update.cell(1, 1, 0) # update on cell
 
 
-# Show list with N x N state dimensions (note: column-wise layout)
-# arglist$show.list() # aperm(arglist$show.list(), c(2,1))
+# Show list with N x N state dimensions
+# arglist$show.list()[1,] 
 
 # Add the state names as the final argument
 # arglist$add.state.name(state.names)
@@ -140,16 +141,11 @@ arglist <- CreateArgumentList(state.names, state.number)
 # arglist$save.list("S1.TM")
 
 # Load the argument list
-# S1.TM.QTFGIT.4R
-# S1.TM.TST10.4R
-# S1.TM.TST15.4R
+# S1.TM
 # S2.TM
 # BASELINE.TM
 
 arglist.S1.TM <- arglist$load.list("S1.TM")
-#arglist.S1.TM.QTFGIT.4R <- arglist$load.list("S1.TM.QTFGIT.4R")
-#arglist.S1.TM.TST10.4R <- arglist$load.list("S1.TM.TST10.4R")
-#arglist.S1.TM.TST15.4R <- arglist$load.list("S1.TM.TST15.4R")
 arglist.S2.TM <- arglist$load.list("S2.TM")
 arglist.BASELINE.TM <- arglist$load.list("BASELINE.TM")
 
@@ -220,15 +216,12 @@ pop.master <- CreatePopulationMaster()
 
 #---------- Model parameters for STRATEGY 0 ----------------#
 
+# TODO - Need a new CreatePopulationMaster function to manage LGA column.
 discount <- 0.03
 start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
 cycles <- 10 # Model run cycles
-
-
-
-
 
 #--------------------- S0 ---------------------------#
 
@@ -248,7 +241,7 @@ year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
 cycles <- 10 # Model run cycles
 
-#--------------------- S2 4R ---------------------------#get
+#--------------------- S2 4R ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
 pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "4R", start.year = 2020, cycles = 10)
