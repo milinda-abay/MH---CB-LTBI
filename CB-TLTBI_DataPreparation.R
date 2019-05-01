@@ -101,24 +101,6 @@ CreatePopulationMaster <- function(Modify = FALSE) {
 
 }
 
-
-#ModifyPop <- function(pop.master, arglist) {
-
-#arglist$drop.state.name()
-#x <- aperm(arglist$show.list(), c(2, 1))
-
-
-#pop.master[, ':='(p.sus.fp.t = p.sus * x[[1, 2]], p.sus.fp.nt = p.sus * x[[1, 3]],
-#p.sus.tn = p.sus * x[[1, 5]], p.ltbi.tp.t = p.ltbi * x[[6, 7]],
-#p.ltbi.tp.nt = p.ltbi * x[[6, 11]], p.ltbi.fn = p.ltbi * x[[6, 14]])]
-
-#pop.master[, c("p.sus", "p.ltbi") := 0]
-
-#pop.master
-
-#}
-
-
 CreateRDSDataFiles <- function() {
     # Uses the FixFertility, Fix Mortality & FixMigration functions to create RDS data.table objects.
 
@@ -387,7 +369,7 @@ CreateRDSDataFiles <- function() {
 
 }
 
-
+# Converts each *.rds files to five(S, SC, SQ, F & FC) *.csv files
 CreateOutput <- function(DT, strategy, test, treatment) {
     
     DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
@@ -456,7 +438,7 @@ CreateOutput <- function(DT, strategy, test, treatment) {
 
 }
 
-
+# Used to read each type of *.csv file
 Readdata <- function(fn) {
     dt_temp <- fread(paste("Data/Output/",fn,sep = ""), sep = ",")
 
@@ -464,6 +446,7 @@ Readdata <- function(fn) {
 
 }
 
+# Converts a rate into a probability
 RateToProb <- function(r, to = 1, per = 1) {
     stopifnot(
     r >= 0,
@@ -475,28 +458,6 @@ RateToProb <- function(r, to = 1, per = 1) {
 }
 
 
-
-
-
-#strategy <- DefineStrategy(
-
-#transition = transMatrix,
-#p.sus = p.sus,
-#p.death = p.death,
-#p.ltbi = p.ltbi
-#)
-
-
-
-# Create state value measures
-
-#state.measures <- c("QALY", "Cost of TST", "Cost of IGRA", "Cost of 4R", "Cost of hospitalisation")
-
-#state.value.matrix <- array(NA, dim = c(length(state.names), length(state.measures), cycles),
-#dimnames = list(states = state.names, measures = state.measures, cycles = 1:cycles))
-# Creates an unevaluated transition matrix
-# Use 'CMP' for complement and 'param$*' for parameters.
-# Each parameter must be a pair-list argument in DefineParameters().
 #transMatrix4R <- DefineTransition(
 #CMP, param$POP * (1 - param$TESTSP) * param$TREATR, param$POP * (1 - param$TESTSP) * (1 - param$TREATR), 0, param$POP * param$TESTSP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
 #0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,

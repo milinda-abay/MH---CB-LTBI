@@ -196,7 +196,7 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
                                TESTC = Get.TEST(S = "cost.primary", testing),
                                TREATR = Get.TREAT(S = "rate", treatment),
                                TREATC = Get.TREAT(S = "cost.primary", treatment),
-                               POP = Get.POP(DT, strategy),
+                               POP = Get.POP(DT, strategy, markov.cycle),
                                UTILITY = Get.UTILITY(treatment),
                                TBCOST = 11408.84
                                )
@@ -241,234 +241,185 @@ year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
 cycles <- 10 # Model run cycles
 
+DoStrategy2(2020,10)
+DoStrategy2(2021, 9)
+DoStrategy2(2022, 8)
+DoStrategy2(2023, 7)
+DoStrategy2(2024, 6)
+DoStrategy2(2025, 5)
+DoStrategy2(2026, 4)
+DoStrategy2(2027, 3)
+DoStrategy2(2028, 2)
+DoStrategy2(2029, 1)
+
+
+DoStrategy2 <- function(start.year, cycles) {
 #--------------------- S2 4R ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "4R", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.QTFGIT.4R.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "4R", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/",start.year,"-S2.QTFGIT.4R.rds", sep=""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST5", treatment = "4R", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST5.4R.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST5", treatment = "4R", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST5.4R.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "4R", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST10.4R.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "4R", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST10.4R.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "4R", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST15.4R.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "4R", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST15.4R.rds", sep = ""))
 
 #--------------------- S2 3HP ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "3HP", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.QTFGIT.3HP.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "3HP", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.QTFGIT.3HP.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST5", treatment = "3HP", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST5.3HP.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST5", treatment = "3HP", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST5.3HP.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "3HP", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST10.3HP.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "3HP", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST10.3HP.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "3HP", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST15.3HP.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "3HP", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST15.3HP.rds", sep = ""))
 
 #--------------------- S2 9H ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "9H", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.QTFGIT.9H.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "9H", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.QTFGIT.9H.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST5", treatment = "9H", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST5.9H.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST5", treatment = "9H", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST5.9H.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "9H", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST10.9H.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "9H", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST10.9H.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "9H", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST15.9H.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "9H", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST15.9H.rds", sep = ""))
 
 #--------------------- S2 6H ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "6H", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.QTFGIT.6H.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "6H", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.QTFGIT.6H.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST5", treatment = "6H", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST5.6H.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST5", treatment = "6H", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST5.6H.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "6H", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST10.6H.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "6H", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST10.6H.rds", sep = ""))
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "6H", start.year = 2020, cycles = 10)
-saveRDS(pop.output, "Data/Output/S2.TST15.6H.rds")
+pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "6H", start.year, cycles)
+saveRDS(pop.output, paste("Data/Output/", start.year,"-S2.TST15.6H.rds", sep = ""))
 
 #--------------------- END OF S2 ---------------------------#
-
-
-
-#---------- Model parameters for S3 ----------------#
-
-discount <- 0.03
-start.year <- 2020
-
-markov.cycle <- 0 # Tracks the current cycle
-cycles <- 10 # Model run cycles
-
-DoRunModel <- function(strategy, testing, treatment, start.year, cycles) {
-    
-    strategyname <- deparse(substitute(strategy))
-    year <- start.year
-
-
-    pop.output1 <- pop.master[YARP <= year][, cycle := 0][1:50000]
-    pop.output1 <- RunModel(pop.output1, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output1, "Data/OutputMPC/pop.output1.rds")
-    rm(pop.output1)
-    
-    pop.output2 <- pop.master[YARP <= year][, cycle := 0][50001:100000]
-    pop.output2 <- RunModel(pop.output2, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output2, "Data/OutputMPC/pop.output2.rds")
-    rm(pop.output2)
-    
-    
-    pop.output3 <- pop.master[YARP <= year][, cycle := 0][100001:150000]
-    pop.output3 <- RunModel(pop.output3, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output3, "Data/OutputMPC/pop.output3.rds")
-    rm(pop.output3)
-    
-    
-    pop.output4 <- pop.master[YARP <= year][, cycle := 0][150001:200000]
-    pop.output4 <- RunModel(pop.output4, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output4, "Data/OutputMPC/pop.output4.rds")
-    rm(pop.output4)
-    
-    pop.output5 <- pop.master[YARP <= year][, cycle := 0][200001:250000]
-    pop.output5 <- RunModel(pop.output5, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output5, "Data/OutputMPC/pop.output5.rds")
-    rm(pop.output5)
-    
-    
-    pop.output6 <- pop.master[YARP <= year][, cycle := 0][250001:300000]                                                            
-    pop.output6 <- RunModel(pop.output6, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output6, "Data/OutputMPC/pop.output6.rds")
-    rm(pop.output6)
-    
-    
-    pop.output7 <- pop.master[YARP <= year][, cycle := 0][300001:324816]                                                                                                                    
-    pop.output7 <- RunModel(pop.output7, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output7, "Data/OutputMPC/pop.output7.rds")
-    rm(pop.output7)
-    
-    
-    pop.output1 <- readRDS("Data/OutputMPC/pop.output1.rds")
-    pop.output2 <- readRDS("Data/OutputMPC/pop.output2.rds")
-    pop.output3 <- readRDS("Data/OutputMPC/pop.output3.rds")
-    pop.output4 <- readRDS("Data/OutputMPC/pop.output4.rds")
-    pop.output5 <- readRDS("Data/OutputMPC/pop.output5.rds")
-    pop.output6 <- readRDS("Data/OutputMPC/pop.output6.rds")
-    pop.output7 <- readRDS("Data/OutputMPC/pop.output7.rds")
-    
-    
-    pop.output <- rbind(pop.output1, pop.output2, pop.output3, pop.output4, pop.output5,pop.output6, pop.output7)
-    
-    saveRDS(pop.output, paste("Data/OutputMPC/", strategyname, ".", testing, ".", treatment, ".rds", sep = ""))
-
 }
 
 
-#--------------------- S3 4R ---------------------------#
-DoRunModel(S3, "QTFGIT", "4R", 2020, 10)
-DoRunModel(S3, "TST5", "4R", 2020, 10)
-DoRunModel(S3, "TST10", "4R", 2020, 10)
-DoRunModel(S3, "TST15", "4R", 2020, 10)
+#---------- Model parameters for S3 , S4 & S5----------------#
 
-#--------------------- S3 3HP ---------------------------#
-DoRunModel(S3, "QTFGIT", "3HP", 2020, 10)
-DoRunModel(S3, "TST5", "3HP", 2020, 10)
-DoRunModel(S3, "TST10", "3HP", 2020, 10)
-DoRunModel(S3, "TST15", "3HP", 2020, 10)
+discount <- 0.03
+start.year <- 2020
+markov.cycle <- 0 # Tracks the current cycle
+cycles <- 10 # Model run cycles
+
+#--------------------- S3 4R ---------------------------#
+DoRunModel(S3, "QTFGIT", "4R", start.year, cycles)
+DoRunModel(S3, "TST5", "4R", start.year, cycles)
+DoRunModel(S3, "TST10", "4R", start.year, cycles)
+DoRunModel(S3, "TST15", "4R", start.year, cycles)
+
+#--------------------- S3 3HP --------------------------#
+DoRunModel(S3, "QTFGIT", "3HP", start.year, cycles)
+DoRunModel(S3, "TST5", "3HP", start.year, cycles)
+DoRunModel(S3, "TST10", "3HP", start.year, cycles)
+DoRunModel(S3, "TST15", "3HP", start.year, cycles)
 
 #--------------------- S3 9H ---------------------------#
-DoRunModel(S3, "QTFGIT", "9H", 2020, 10)
-DoRunModel(S3, "TST5", "9H", 2020, 10)
-DoRunModel(S3, "TST10", "9H", 2020, 10)
-DoRunModel(S3, "TST15", "9H", 2020, 10)
+DoRunModel(S3, "QTFGIT", "9H", start.year, cycles)
+DoRunModel(S3, "TST5", "9H", start.year, cycles)
+DoRunModel(S3, "TST10", "9H", start.year, cycles)
+DoRunModel(S3, "TST15", "9H", start.year, cycles)
 
 #--------------------- S3 6H ---------------------------#
-DoRunModel(S3, "QTFGIT", "6H", 2020, 10)
-DoRunModel(S3, "TST5", "6H", 2020, 10)
-DoRunModel(S3, "TST10", "6H", 2020, 10)
-DoRunModel(S3, "TST15", "6H", 2020, 10)
+DoRunModel(S3, "QTFGIT", "6H", start.year, cycles)
+DoRunModel(S3, "TST5", "6H", start.year, cycles)
+DoRunModel(S3, "TST10", "6H", start.year, cycles)
+DoRunModel(S3, "TST15", "6H", start.year, cycles)
 
-#--------------------- END OF S3 ---------------------------#
+#--------------------- END OF S3 -----------------------#
 
 #--------------------- S4 4R ---------------------------#
-DoRunModel(S4, "QTFGIT", "4R", 2020, 10)
-DoRunModel(S4, "TST5", "4R", 2020, 10)
-DoRunModel(S4, "TST10", "4R", 2020, 10)
-DoRunModel(S4, "TST15", "4R", 2020, 10)
+DoRunModel(S4, "QTFGIT", "4R", start.year, cycles)
+DoRunModel(S4, "TST5", "4R", start.year, cycles)
+DoRunModel(S4, "TST10", "4R", start.year, cycles)
+DoRunModel(S4, "TST15", "4R", start.year, cycles)
 
-#--------------------- S4 3HP ---------------------------#
-DoRunModel(S4, "QTFGIT", "3HP", 2020, 10)
-DoRunModel(S4, "TST5", "3HP", 2020, 10)
-DoRunModel(S4, "TST10", "3HP", 2020, 10)
-DoRunModel(S4, "TST15", "3HP", 2020, 10)
+#--------------------- S4 3HP --------------------------#
+DoRunModel(S4, "QTFGIT", "3HP", start.year, cycles)
+DoRunModel(S4, "TST5", "3HP", start.year, cycles)
+DoRunModel(S4, "TST10", "3HP", start.year, cycles)
+DoRunModel(S4, "TST15", "3HP", start.year, cycles)
 
 #--------------------- S4 9H ---------------------------#
-DoRunModel(S4, "QTFGIT", "9H", 2020, 10)
-DoRunModel(S4, "TST5", "9H", 2020, 10)
-DoRunModel(S4, "TST10", "9H", 2020, 10)
-DoRunModel(S4, "TST15", "9H", 2020, 10)
+DoRunModel(S4, "QTFGIT", "9H", start.year, cycles)
+DoRunModel(S4, "TST5", "9H", start.year, cycles)
+DoRunModel(S4, "TST10", "9H", start.year, cycles)
+DoRunModel(S4, "TST15", "9H", start.year, cycles)
 
 #--------------------- S4 6H ---------------------------#
-DoRunModel(S4, "QTFGIT", "6H", 2020, 10)
-DoRunModel(S4, "TST5", "6H", 2020, 10)
-DoRunModel(S4, "TST10", "6H", 2020, 10)
-DoRunModel(S4, "TST15", "6H", 2020, 10)
-#--------------------- END OF S4 ---------------------------#
+DoRunModel(S4, "QTFGIT", "6H", start.year, cycles)
+DoRunModel(S4, "TST5", "6H", start.year, cycles)
+DoRunModel(S4, "TST10", "6H", start.year, cycles)
+DoRunModel(S4, "TST15", "6H", start.year, cycles)
+#--------------------- END OF S4 -----------------------#
 
 #--------------------- S5 4R ---------------------------#
-DoRunModel(S5, "QTFGIT", "4R", 2020, 10)
-DoRunModel(S5, "TST5", "4R", 2020, 10)
-DoRunModel(S5, "TST10", "4R", 2020, 10)
-DoRunModel(S5, "TST15", "4R", 2020, 10)
+DoRunModel(S5, "QTFGIT", "4R", start.year, cycles)
+DoRunModel(S5, "TST5", "4R", start.year, cycles)
+DoRunModel(S5, "TST10", "4R", start.year, cycles)
+DoRunModel(S5, "TST15", "4R", start.year, cycles)
 
 #--------------------- S5 3HP ---------------------------#
-DoRunModel(S5, "QTFGIT", "3HP", 2020, 10)
-DoRunModel(S5, "TST5", "3HP", 2020, 10)
-DoRunModel(S5, "TST10", "3HP", 2020, 10)
-DoRunModel(S5, "TST15", "3HP", 2020, 10)
+DoRunModel(S5, "QTFGIT", "3HP", start.year, cycles)
+DoRunModel(S5, "TST5", "3HP", start.year, cycles)
+DoRunModel(S5, "TST10", "3HP", start.year, cycles)
+DoRunModel(S5, "TST15", "3HP", start.year, cycles)
 
-#--------------------- S5 9H ---------------------------#
-DoRunModel(S5, "QTFGIT", "9H", 2020, 10)
-DoRunModel(S5, "TST5", "9H", 2020, 10)
-DoRunModel(S5, "TST10", "9H", 2020, 10)
-DoRunModel(S5, "TST15", "9H", 2020, 10)
+#--------------------- S5 9H ----------------------------#
+DoRunModel(S5, "QTFGIT", "9H", start.year, cycles)
+DoRunModel(S5, "TST5", "9H", start.year, cycles)
+DoRunModel(S5, "TST10", "9H", start.year, cycles)
+DoRunModel(S5, "TST15", "9H", start.year, cycles)
 
 #--------------------- S5 6H ---------------------------#
-DoRunModel(S5, "QTFGIT", "6H", 2020, 10)
-DoRunModel(S5, "TST5", "6H", 2020, 10)
-DoRunModel(S5, "TST10", "6H", 2020, 10)
-DoRunModel(S5, "TST15", "6H", 2020, 10)
+DoRunModel(S5, "QTFGIT", "6H", start.year, cycles)
+DoRunModel(S5, "TST5", "6H", start.year, cycles)
+DoRunModel(S5, "TST10", "6H", start.year, cycles)
+DoRunModel(S5, "TST15", "6H", start.year, cycles)
 
-#--------------------- END OF S5 ---------------------------#
+#--------------------- END OF S5 ------------------------#
 
 
 #-------- Model parameters for S1 --------#
 
 discount <- 0.03
 start.year <- 2019
+cycles <- 11 # Model run cycles
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
 pop.master <- CreatePopulationMaster(Modify = TRUE)
@@ -481,25 +432,25 @@ pop.master <- CreatePopulationMaster(Modify = TRUE)
 #--------------------- S1 4R ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "QTFGIT", treatment = "4R", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "QTFGIT", treatment = "4R", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.QTFGIT.4R.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST5", treatment = "4R", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST5", treatment = "4R", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST5.4R.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST10", treatment = "4R", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST10", treatment = "4R", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST10.4R.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST15", treatment = "4R", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST15", treatment = "4R", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST15.4R.rds")
@@ -507,26 +458,26 @@ saveRDS(pop.output, "Data/Output/S1.TST15.4R.rds")
 #--------------------- S1 3HP ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "QTFGIT", treatment = "3HP", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "QTFGIT", treatment = "3HP", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.QTFGIT.3HP.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST5", treatment = "3HP", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST5", treatment = "3HP", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST5.3HP.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST10", treatment = "3HP", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST10", treatment = "3HP", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST10.3HP.rds")
 
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST15", treatment = "3HP", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST15", treatment = "3HP", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST15.3HP.rds")
@@ -534,25 +485,25 @@ saveRDS(pop.output, "Data/Output/S1.TST15.3HP.rds")
 #--------------------- S1 9H ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "QTFGIT", treatment = "9H", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "QTFGIT", treatment = "9H", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.QTFGIT.9H.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST5", treatment = "9H", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST5", treatment = "9H", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST5.9H.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST10", treatment = "9H", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST10", treatment = "9H", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST10.9H.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST15", treatment = "9H", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST15", treatment = "9H", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST15.9H.rds")
@@ -560,25 +511,25 @@ saveRDS(pop.output, "Data/Output/S1.TST15.9H.rds")
 #--------------------- S1 6H ---------------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "QTFGIT", treatment = "6H", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "QTFGIT", treatment = "6H", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.QTFGIT.6H.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST5", treatment = "6H", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST5", treatment = "6H", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST5.6H.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST10", treatment = "6H", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST10", treatment = "6H", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST10.6H.rds")
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S1, testing = "TST15", treatment = "6H", start.year = 2019, cycles = 11)
+pop.output <- RunModel(pop.output, strategy = S1, testing = "TST15", treatment = "6H", start.year, cycles)
 pop.output <- pop.output[p.sus == 0]
 pop.output[, cycle := cycle - 1]
 saveRDS(pop.output, "Data/Output/S1.TST15.6H.rds")
