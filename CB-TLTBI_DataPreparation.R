@@ -393,7 +393,7 @@ CreateOutput <- function(DT, strategy, test, treatment) {
     DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
 
     DT <- DT[, c(124:126, 1:123)]
-    browser()
+    
 
     colnames(DT)
 
