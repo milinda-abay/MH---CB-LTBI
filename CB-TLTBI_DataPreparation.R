@@ -370,16 +370,28 @@ CreateRDSDataFiles <- function() {
 }
 
 # Converts each *.rds files to five(S, SC, SQ, F & FC) *.csv files
-CreateOutput <- function(DT, strategy, test, treatment) {
+CreateOutput <- function(strategy, test, treatment) {
     
+
+    if (test == "No Test") {
+
+        DT <- readRDS("Data/Output/S0.rds")
+
+    } else {
+
+        DT <- readRDS(paste("Data/Output/", strategy, ".", test, ".", treatment, ".rds", sep = ""))
+        
+    }
+
     DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
-
     DT <- DT[, c(124:126, 1:123)]
-    
 
-    colnames(DT)
 
-    cyc <- which(colnames(DT) == "cycle")
+    colsToSum <- names(DT)[c(7, 8, 12:126)]
+
+    DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
+        
+    cyc <- which(colnames(DT) == "LTBP")
     psus <- which(colnames(DT) == "p.sus")
     pdeath <- which(colnames(DT) == "p.death")
     Vpsus <- which(colnames(DT) == "V.p.sus")
@@ -392,36 +404,28 @@ CreateOutput <- function(DT, strategy, test, treatment) {
     SQpdeath <- which(colnames(DT) == "SQ.p.death")
 
 
-
-
-
-    #colsToSum <- names(DT)[c(7, 8, 12:126)]
-
-    #DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
-
     # State count table
-    DT.S <- DT[, c(1:..cyc, ..psus:..pdeath)]
+    DT.S <- DT[, c(1:..pdeath)]
     fwrite(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
     #DT.S <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
     #saveRDS(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.rds", sep = ""))
-
-
+    rm(DT.S)
+    
     # Flow count table
     DT.F <- DT[, c(1:..cyc, ..Vpsus:..Vpdeath)]
     colnames(DT.F) <- gsub("V.", "", colnames(DT.F))
     fwrite(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.csv", sep = ""))
     #DT.F <- fread(file = paste("Data/Output/",strategy,"_",test,"_", treatment, "_F.csv", sep =""))
     #saveRDS(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.rds", sep = ""))
-
-
-
+    rm(DT.F)
+    
     # State cost table
     DT.SC <- DT[, c(1:..cyc, ..SCpsus:..SCpdeath)]
     colnames(DT.SC) <- gsub("SC.", "", colnames(DT.SC))
     fwrite(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep = ""))
     #DT.SC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep =""))
     #saveRDS(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.rds", sep = ""))
-
+    rm(DT.SC)
 
     # Flow cost table
     DT.FC <- DT[, c(1:..cyc, ..FCpsus:..FCpdeath)]
@@ -429,12 +433,14 @@ CreateOutput <- function(DT, strategy, test, treatment) {
     fwrite(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
     #DT.FC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
     #saveRDS(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.rds", sep = ""))
+    rm(DT.FC)
 
     DT.SQ <- DT[, c(1:..cyc, ..SQpsus:..SQpdeath)]
     colnames(DT.SQ) <- gsub("SQ.", "", colnames(DT.SQ))
     fwrite(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
     #DT.SQ <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
     #saveRDS(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.rds", sep = ""))
+    rm(DT.SQ)
 
 }
 
@@ -445,6 +451,37 @@ Readdata <- function(fn) {
     dt_temp
 
 }
+
+ReadStrategy2 <- function(fn) {
+
+    dt_temp <- readRDS(paste("Data/Output/", fn, sep = ""))
+
+    dt_temp
+
+}
+
+combineS2files <- function(fn) {
+
+    all.S2.files <- list.files(path = "Data/Output", pattern = fn)
+    mylist <- lapply(all.S2.files, ReadStrategy2)
+    mylist[[2]] <- mylist[[2]][, cycle := cycle + 1]
+    mylist[[3]] <- mylist[[3]][, cycle := cycle + 2]
+    mylist[[4]] <- mylist[[4]][, cycle := cycle + 3]
+    mylist[[5]] <- mylist[[5]][, cycle := cycle + 4]
+    mylist[[6]] <- mylist[[6]][, cycle := cycle + 5]
+    mylist[[7]] <- mylist[[7]][, cycle := cycle + 6]
+    mylist[[8]] <- mylist[[8]][, cycle := cycle + 7]
+    mylist[[9]] <- mylist[[9]][, cycle := cycle + 8]
+    mylist[[10]] <- mylist[[10]][, cycle := cycle + 9]
+    tempDT <- rbindlist(mylist, fill = TRUE)
+    saveRDS(tempDT, paste("Data/Output/", fn, ".rds", sep = ""))
+
+}
+
+
+
+
+
 
 # Converts a rate into a probability
 RateToProb <- function(r, to = 1, per = 1) {

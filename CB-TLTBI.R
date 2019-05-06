@@ -251,7 +251,7 @@ DoStrategy2(2026, 4)
 DoStrategy2(2027, 3)
 DoStrategy2(2028, 2)
 DoStrategy2(2029, 1)
-
+DoStrategy2(2030, 0) # required
 
 DoStrategy2 <- function(start.year, cycles) {
 #--------------------- S2 4R ---------------------------#
@@ -336,6 +336,13 @@ discount <- 0.03
 start.year <- 2020
 markov.cycle <- 0 # Tracks the current cycle
 cycles <- 10 # Model run cycles
+
+
+#-----------Baseline for S3, S4 & S5 -------------------#
+DoRunModel(BO, "", "", start.year, cycles)
+
+
+
 
 #--------------------- S3 4R ---------------------------#
 DoRunModel(S3, "QTFGIT", "4R", start.year, cycles)
