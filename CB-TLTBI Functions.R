@@ -140,7 +140,11 @@ Get.MR <- function(xDT, year, rate.assumption = "High") {
 }
 
 # Look up the Reactivation rate
-Get.RR <- function(DT, year) {
+Get.RR <- function(xDT, year) {
+
+    DT <- copy(xDT[, .(AGERP, SEXP, YARP)])
+
+    DT[AGERP > 110, AGERP := 110]
 
     RRates[DT[, .(AGERP, SEXP, ST = year - YARP)], Rate, on = .(Age = AGERP, Sex = SEXP, statetime = ST)]
 
@@ -175,16 +179,21 @@ Get.TREAT <- function(S, treat) {
 
 # look up target population percentage
 Get.POP <- function(DT, strategy, markov.cycle) {
-
-    if (markov.cycle != 0 & strategy$myname == "S2") {
+    
+    if (markov.cycle != 0 && strategy$myname == "S2") {
 
         0
+    } else if (strategy$myname == "S1") {
+
+        1
+
     } else {
 
         ifelse(DT$YARP < 2020,
            switch(strategy$myname,
-                  BO = 0,
-                  S1 = 1,
+                  S0_12 = 0,
+                  S0_345 =0,
+                  S1 = 0,
                   S2 = 0,
                   S3 = 0.05,
                   S4 = 0.10,
@@ -200,7 +209,7 @@ Get.POP <- function(DT, strategy, markov.cycle) {
 
 Get.UTILITY <- function(t) {
 
-    as.numeric(utility.dt[treatment == t][, 2:24])
+    as.numeric(utility.dt[treatment == t][, 2:21])
 
 }
 
@@ -210,8 +219,6 @@ Get.DISCOUNT <- function() {
     .03
 
 }
-
-
 
 
 
@@ -342,6 +349,11 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     # Use param$* when using DefineTransition() 
     param <- lazy_eval(parameters)
 
+    # TODO (Milinda) - extract param$* and re assign to variables of same name.
+    # As a result we can stop using param$ inside DefineTransition().
+    #for (i in names(param)) {
+    #assign(i, param[[i]])
+    #}
 
     flow.cost <- lazy_eval(unevaluated.flow.cost)
     state.cost <- lazy_eval(unevaluated.state.cost)
@@ -353,11 +365,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     param$RR[is.na(param$RR)] <- 0.0013
     param$TBMR[is.na(param$TBMR)] <- 0.01
 
-    # TODO (Milinda) - extract param$* and re assign to variables of same name.
-    # As a result we can stop using param$ inside DefineTransition().
-    #for (i in names(param)) {
-    #assign(i, param[[i]])
-    #}
+    
 
 
     # assign the current environment for evaluation. 
@@ -405,14 +413,17 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
 }
 
 
+
+
 #------------------------------------------------------------------------#
 
 # The main model runtime loop 
-RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycles) {
-
+RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow) {
+    
     #To keep track of the current strategy name
-    strategy$myname <- deparse(substitute(strategy))
-
+    if (is.null(strategy$myname)) {
+        strategy$myname <- deparse(substitute(strategy))
+    }
     # initialise the calculation object
     pop.calculated <- copy(pop.output)
 
@@ -434,7 +445,7 @@ RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycle
 
         # Inflows for next cycle. 
         # A conditional flag use this for testing.
-        modelinflow <- FALSE
+        # modelinflow <- FALSE
 
         if (modelinflow) {
             pop.inflow <- pop.master[YARP == year,][, cycle := NA]
@@ -464,61 +475,82 @@ RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycle
 
 DoRunModel <- function(strategy, testing, treatment, start.year, cycles) {
 
-    strategyname <- deparse(substitute(strategy))
+    strategy$myname <- deparse(substitute(strategy))
+
+    if (strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname =="S0_12") {
+
+        modelinflow <- TRUE
+
+    } else {
+
+        modelinflow <- FALSE
+
+    }
+
+
     year <- start.year
 
+    if (nrow(pop.master) < 501) {
 
-    pop.output1 <- pop.master[YARP <= year][, cycle := 0][1:50000]
-    pop.output1 <- RunModel(pop.output1, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output1, "Data/OutputMPC/pop.output1.rds")
-    rm(pop.output1)
+        pop.output <- pop.master[YARP <= year][, cycle := 0]
+        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
+        saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", testing, ".", treatment, ".rds", sep = ""))
 
-    pop.output2 <- pop.master[YARP <= year][, cycle := 0][50001:100000]
-    pop.output2 <- RunModel(pop.output2, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output2, "Data/OutputMPC/pop.output2.rds")
-    rm(pop.output2)
+    } else {
 
 
-    pop.output3 <- pop.master[YARP <= year][, cycle := 0][100001:150000]
-    pop.output3 <- RunModel(pop.output3, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output3, "Data/OutputMPC/pop.output3.rds")
-    rm(pop.output3)
+        pop.output <- pop.master[YARP <= year][, cycle := 0][1:50000]
+        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
+        saveRDS(pop.output, "Data/Output/pop.output1.rds")
 
 
-    pop.output4 <- pop.master[YARP <= year][, cycle := 0][150001:200000]
-    pop.output4 <- RunModel(pop.output4, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output4, "Data/OutputMPC/pop.output4.rds")
-    rm(pop.output4)
-
-    pop.output5 <- pop.master[YARP <= year][, cycle := 0][200001:250000]
-    pop.output5 <- RunModel(pop.output5, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output5, "Data/OutputMPC/pop.output5.rds")
-    rm(pop.output5)
+        pop.output <- pop.master[YARP <= year][, cycle := 0][50001:100000]
+        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
+        saveRDS(pop.output, "Data/Output/pop.output2.rds")
 
 
-    pop.output6 <- pop.master[YARP <= year][, cycle := 0][250001:300000]
-    pop.output6 <- RunModel(pop.output6, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output6, "Data/OutputMPC/pop.output6.rds")
-    rm(pop.output6)
+
+        pop.output <- pop.master[YARP <= year][, cycle := 0][100001:150000]
+        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
+        saveRDS(pop.output, "Data/Output/pop.output3.rds")
 
 
-    pop.output7 <- pop.master[YARP <= year][, cycle := 0][300001:324816]
-    pop.output7 <- RunModel(pop.output7, strategy, testing, treatment, start.year, cycles)
-    saveRDS(pop.output7, "Data/OutputMPC/pop.output7.rds")
-    rm(pop.output7)
+
+        pop.output <- pop.master[YARP <= year][, cycle := 0][150001:200000]
+        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
+        saveRDS(pop.output, "Data/Output/pop.output4.rds")
 
 
-    pop.output1 <- readRDS("Data/OutputMPC/pop.output1.rds")
-    pop.output2 <- readRDS("Data/OutputMPC/pop.output2.rds")
-    pop.output3 <- readRDS("Data/OutputMPC/pop.output3.rds")
-    pop.output4 <- readRDS("Data/OutputMPC/pop.output4.rds")
-    pop.output5 <- readRDS("Data/OutputMPC/pop.output5.rds")
-    pop.output6 <- readRDS("Data/OutputMPC/pop.output6.rds")
-    pop.output7 <- readRDS("Data/OutputMPC/pop.output7.rds")
+        pop.output <- pop.master[YARP <= year][, cycle := 0][200001:250000]
+        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
+        saveRDS(pop.output, "Data/Output/pop.output5.rds")
 
 
-    pop.output <- rbind(pop.output1, pop.output2, pop.output3, pop.output4, pop.output5, pop.output6, pop.output7)
 
-    saveRDS(pop.output, paste("Data/OutputMPC/", strategyname, ".", testing, ".", treatment, ".rds", sep = ""))
+        pop.output <- pop.master[YARP <= year][, cycle := 0][250001:300000]
+        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
+        saveRDS(pop.output, "Data/Output/pop.output6.rds")
+
+
+
+        pop.output <- pop.master[YARP <= year][, cycle := 0][300001:324816]
+        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
+        saveRDS(pop.output, "Data/Output/pop.output7.rds")
+
+
+
+        pop.output1 <- readRDS("Data/Output/pop.output1.rds")
+        pop.output2 <- readRDS("Data/Output/pop.output2.rds")
+        pop.output3 <- readRDS("Data/Output/pop.output3.rds")
+        pop.output4 <- readRDS("Data/Output/pop.output4.rds")
+        pop.output5 <- readRDS("Data/Output/pop.output5.rds")
+        pop.output6 <- readRDS("Data/Output/pop.output6.rds")
+        pop.output7 <- readRDS("Data/Output/pop.output7.rds")
+
+
+        pop.output <- rbind(pop.output1, pop.output2, pop.output3, pop.output4, pop.output5, pop.output6, pop.output7)
+
+        saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", testing, ".", treatment, ".rds", sep = ""))
+    }
 
 }

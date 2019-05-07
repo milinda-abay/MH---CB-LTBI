@@ -47,21 +47,21 @@ CreatePopulationMaster <- function(Modify = FALSE) {
 
 
 
-    pop.master.2016 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2016L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2017 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2017L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2018 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2018L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2019 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2019L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2020L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2021L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2022L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2023L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2024L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2025L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2026L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2027L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2028 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2028L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2029 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2029L, NUMP, LTBP, AGERP, SEXP),]
-    pop.master.2030 <- pop.master[YARP == 2015, .(AGEP, ISO3, YARP = 2030L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2016 <- pop.master[YARP == 2015, .(AGEP = AGEP-1, ISO3, YARP = 2016L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2017 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2017L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2018 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2018L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2019 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2019L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2020 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2020L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2021 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2021L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2022 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2022L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2023 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2023L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2024 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2024L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2025 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2025L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2026 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2026L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2027 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2027L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2028 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2028L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2029 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2029L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2030 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2030L, NUMP, LTBP, AGERP, SEXP),]
 
 
     pop.master <- rbind(pop.master, pop.master.2016, pop.master.2017, pop.master.2018, pop.master.2019,
@@ -80,20 +80,22 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     # TODO - Fix this! It is hard coded for 23 states.
     pop.master <- pop.master[, cycle := as.integer(NA)]
     pop.master <- pop.master[, (new.state.names) := as.numeric(NA)]
-    pop.master <- pop.master[, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
-    
+    pop.master <- pop.master[, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
 
-    # Create a age at arrival column AGERP
-    pop.master[YARP < 2016, AGERP := AGEP - (2016L - YARP)]
-    pop.master[YARP == 2016, AGERP := AGEP]
-    pop.master[YARP > 2016, AGERP := AGEP - 1L] # because the 2015 cohort is replicated for 2017 to 2030.
+    # Because we are running the model from 2020 the retrospective cohort must be aged from 2016 to 2020
+    pop.master[YARP <= 2016, AGEP := AGEP + 4] # Census was taken in 2016
+    pop.master[YARP == 2017, AGEP := AGEP + 3]
+    pop.master[YARP == 2018, AGEP := AGEP + 2]
+    pop.master[YARP == 2019, AGEP := AGEP + 1]
 
 
     if (Modify) {
 
         # recheck this logic! Only for S1 100% off-shore testing.
         # Making the cohort one year younger and starting them from 2019 in p.sus and p.ltbi.
-        pop.master[YARP >= 2019, AGEP := AGEP - 1L]
+        pop.output <- pop.master[YARP >= 2020][, cycle := 0]
+        pop.output <- RunModel(pop.output, strategy = S0_12, testing = "", treatment = "", start.year = 2020, cycles = 1, modelinflow = FALSE)
+        pop.master <- pop.output[,AGEP:=AGEP-1]
 
     }
 
@@ -373,25 +375,29 @@ CreateRDSDataFiles <- function() {
 CreateOutput <- function(strategy, test, treatment) {
     
 
-    if (test == "No Test") {
+    if (strategy == "S0_12") {
 
-        DT <- readRDS("Data/Output/S0.rds")
+        DT <- readRDS("Data/Output/S0_12.rds")
 
+    } else if (strategy == "S0_345") {
+
+        DT <- readRDS("Data/Output/S0_345.rds")
     } else {
 
         DT <- readRDS(paste("Data/Output/", strategy, ".", test, ".", treatment, ".rds", sep = ""))
         
     }
 
+    
     DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
-    DT <- DT[, c(124:126, 1:123)]
+    DT <- DT[, c(109:111, 1:108)]
 
 
-    colsToSum <- names(DT)[c(7, 8, 12:126)]
+    #colsToSum <- names(DT)[c(7, 8, 12:126)]
 
-    DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
+    #DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
         
-    cyc <- which(colnames(DT) == "LTBP")
+    cyc <- which(colnames(DT) == "p.sus")-1
     psus <- which(colnames(DT) == "p.sus")
     pdeath <- which(colnames(DT) == "p.death")
     Vpsus <- which(colnames(DT) == "V.p.sus")
@@ -476,9 +482,93 @@ combineS2files <- function(fn) {
     tempDT <- rbindlist(mylist, fill = TRUE)
     saveRDS(tempDT, paste("Data/Output/", fn, ".rds", sep = ""))
 
+    # Deletes the files
+    unlink(lapply("Data/Output/", paste, all.S2.files, sep = "")[[1]])
+
 }
 
+DoStrategy2 <- function(start.year, cycles) {
 
+    modelinflow <- TRUE
+    #--------------------- S2 4R ---------------------------#
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "4R", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.QTFGIT.4R.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST05", treatment = "4R", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST05.4R.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "4R", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST10.4R.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "4R", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST15.4R.rds", sep = ""))
+
+    #--------------------- S2 3HP ---------------------------#
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "3HP", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.QTFGIT.3HP.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST05", treatment = "3HP", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST05.3HP.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "3HP", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST10.3HP.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "3HP", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST15.3HP.rds", sep = ""))
+
+    #--------------------- S2 9H ---------------------------#
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "9H", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.QTFGIT.9H.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST05", treatment = "9H", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST05.9H.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "9H", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST10.9H.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "9H", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST15.9H.rds", sep = ""))
+
+    #--------------------- S2 6H ---------------------------#
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "6H", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.QTFGIT.6H.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST05", treatment = "6H", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST05.6H.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "6H", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST10.6H.rds", sep = ""))
+
+    pop.output <- pop.master[YARP == year][, cycle := 0]
+    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "6H", start.year, cycles, modelinflow)
+    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST15.6H.rds", sep = ""))
+
+    #--------------------- END OF S2 ---------------------------#
+
+
+
+
+
+}
 
 
 
