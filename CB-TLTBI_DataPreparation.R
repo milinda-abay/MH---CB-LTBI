@@ -47,7 +47,7 @@ CreatePopulationMaster <- function(Modify = FALSE) {
 
 
 
-    pop.master.2016 <- pop.master[YARP == 2015, .(AGEP = AGEP-1, ISO3, YARP = 2016L, NUMP, LTBP, AGERP, SEXP),]
+    pop.master.2016 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2016L, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2017 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2017L, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2018 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2018L, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2019 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2019L, NUMP, LTBP, AGERP, SEXP),]
@@ -77,9 +77,11 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
 
     # Calculate the susceptible and latent population
-    # TODO - Fix this! It is hard coded for 23 states.
+
     pop.master <- pop.master[, cycle := as.integer(NA)]
     pop.master <- pop.master[, (new.state.names) := as.numeric(NA)]
+
+    # TODO - Fix this! It is hard coded for 20 states.
     pop.master <- pop.master[, (state.names) := .(NUMP - LTBP, 0, 0, 0, 0, LTBP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
 
     # Because we are running the model from 2020 the retrospective cohort must be aged from 2016 to 2020
@@ -93,9 +95,10 @@ CreatePopulationMaster <- function(Modify = FALSE) {
 
         # recheck this logic! Only for S1 100% off-shore testing.
         # Making the cohort one year younger and starting them from 2019 in p.sus and p.ltbi.
+        browser()
         pop.output <- pop.master[YARP >= 2020][, cycle := 0]
-        pop.output <- RunModel(pop.output, strategy = S0_12, testing = "", treatment = "", start.year = 2020, cycles = 1, modelinflow = FALSE)
-        pop.master <- pop.output[,AGEP:=AGEP-1]
+        pop.output <- RunModel(pop.output, strategy = S1, testing = "", treatment = "", start.year = 2020, cycles = 1, modelinflow = FALSE)
+        pop.master <- pop.output[, AGEP := AGEP - 1]
 
     }
 
@@ -372,206 +375,113 @@ CreateRDSDataFiles <- function() {
 }
 
 # Converts each *.rds files to five(S, SC, SQ, F & FC) *.csv files
-CreateOutput <- function(strategy, test, treatment) {
-    
+CreateOutput <- function(strategy) {
 
-    if (strategy == "S0_12") {
+    if (strategy == "S0_12" || strategy == "S0_345") {
 
-        DT <- readRDS("Data/Output/S0_12.rds")
+        listoftests <- c("No Test")
+        listoftreatments <- c("No Treatment")
 
-    } else if (strategy == "S0_345") {
-
-        DT <- readRDS("Data/Output/S0_345.rds")
     } else {
 
-        DT <- readRDS(paste("Data/Output/", strategy, ".", test, ".", treatment, ".rds", sep = ""))
-        
+        listoftests <- c("QTFGIT", "TST05", "TST10", "TST15")
+        listoftreatments <- c("4R", "3HP", "6H", "9H")
     }
 
-    
-    DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
-    DT <- DT[, c(109:111, 1:108)]
 
 
-    #colsToSum <- names(DT)[c(7, 8, 12:126)]
+    readtest <- function(test) {
 
-    #DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP, cycle), .SDcols = colsToSum]
-        
-    cyc <- which(colnames(DT) == "p.sus")-1
-    psus <- which(colnames(DT) == "p.sus")
-    pdeath <- which(colnames(DT) == "p.death")
-    Vpsus <- which(colnames(DT) == "V.p.sus")
-    Vpdeath <- which(colnames(DT) == "V.p.death")
-    SCpsus <- which(colnames(DT) == "SC.p.sus")
-    SCpdeath <- which(colnames(DT) == "SC.p.death")
-    FCpsus <- which(colnames(DT) == "FC.p.sus")
-    FCpdeath <- which(colnames(DT) == "FC.p.death")
-    SQpsus <- which(colnames(DT) == "SQ.p.sus")
-    SQpdeath <- which(colnames(DT) == "SQ.p.death")
+        readtreatment <- function(treatment) {
+
+            if (strategy == "S0_12") {
+
+                DT <- readRDS("Data/Output/S0_12.rds")
 
 
-    # State count table
-    DT.S <- DT[, c(1:..pdeath)]
-    fwrite(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
-    #DT.S <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
-    #saveRDS(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.rds", sep = ""))
-    rm(DT.S)
-    
-    # Flow count table
-    DT.F <- DT[, c(1:..cyc, ..Vpsus:..Vpdeath)]
-    colnames(DT.F) <- gsub("V.", "", colnames(DT.F))
-    fwrite(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.csv", sep = ""))
-    #DT.F <- fread(file = paste("Data/Output/",strategy,"_",test,"_", treatment, "_F.csv", sep =""))
-    #saveRDS(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.rds", sep = ""))
-    rm(DT.F)
-    
-    # State cost table
-    DT.SC <- DT[, c(1:..cyc, ..SCpsus:..SCpdeath)]
-    colnames(DT.SC) <- gsub("SC.", "", colnames(DT.SC))
-    fwrite(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep = ""))
-    #DT.SC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep =""))
-    #saveRDS(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.rds", sep = ""))
-    rm(DT.SC)
+            } else if (strategy == "S0_345") {
 
-    # Flow cost table
-    DT.FC <- DT[, c(1:..cyc, ..FCpsus:..FCpdeath)]
-    colnames(DT.FC) <- gsub("FC.", "", colnames(DT.FC))
-    fwrite(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
-    #DT.FC <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
-    #saveRDS(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.rds", sep = ""))
-    rm(DT.FC)
+                DT <- readRDS("Data/Output/S0_345.rds")
 
-    DT.SQ <- DT[, c(1:..cyc, ..SQpsus:..SQpdeath)]
-    colnames(DT.SQ) <- gsub("SQ.", "", colnames(DT.SQ))
-    fwrite(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
-    #DT.SQ <- fread(file = paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
-    #saveRDS(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.rds", sep = ""))
-    rm(DT.SQ)
+            } else {
+
+                DT <- readRDS(paste("Data/Output/", strategy, ".", test, ".", treatment, ".rds", sep = ""))
+
+            }
+
+
+
+            DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
+            foo <- c((ncol(DT) - 2):ncol(DT), 1:(ncol(DT) - 3))
+            DT <- DT[, ..foo]
+
+            colindex <- which(colnames(DT) %in% c("LTBP", "NUMP", "p.sus", "SQ.p.death"))
+
+            colsToSum <- names(DT)[c(colindex[1], colindex[2], colindex[3]:colindex[4])]
+
+            DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP), .SDcols = colsToSum]
+
+            cyc <- which(colnames(DT) == "p.sus") - 1
+            psus <- which(colnames(DT) == "p.sus")
+            pdeath <- which(colnames(DT) == "p.death")
+            Vpsus <- which(colnames(DT) == "V.p.sus")
+            Vpdeath <- which(colnames(DT) == "V.p.death")
+            SCpsus <- which(colnames(DT) == "SC.p.sus")
+            SCpdeath <- which(colnames(DT) == "SC.p.death")
+            FCpsus <- which(colnames(DT) == "FC.p.sus")
+            FCpdeath <- which(colnames(DT) == "FC.p.death")
+            SQpsus <- which(colnames(DT) == "SQ.p.sus")
+            SQpdeath <- which(colnames(DT) == "SQ.p.death")
+
+
+            # State count table
+            DT.S <- DT[, c(1:..pdeath)]
+            fwrite(DT.S, paste("Data/Output/", strategy, "_", test, "_", treatment, "_S.csv", sep = ""))
+            rm(DT.S)
+
+            # Flow count table
+            DT.F <- DT[, c(1:..cyc, ..Vpsus:..Vpdeath)]
+            colnames(DT.F) <- gsub("V.", "", colnames(DT.F))
+            fwrite(DT.F, paste("Data/Output/", strategy, "_", test, "_", treatment, "_F.csv", sep = ""))
+            rm(DT.F)
+
+            # State cost table
+            DT.SC <- DT[, c(1:..cyc, ..SCpsus:..SCpdeath)]
+            colnames(DT.SC) <- gsub("SC.", "", colnames(DT.SC))
+            fwrite(DT.SC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SC.csv", sep = ""))
+            rm(DT.SC)
+
+            # Flow cost table
+            DT.FC <- DT[, c(1:..cyc, ..FCpsus:..FCpdeath)]
+            colnames(DT.FC) <- gsub("FC.", "", colnames(DT.FC))
+            fwrite(DT.FC, paste("Data/Output/", strategy, "_", test, "_", treatment, "_FC.csv", sep = ""))
+            rm(DT.FC)
+
+            DT.SQ <- DT[, c(1:..cyc, ..SQpsus:..SQpdeath)]
+            colnames(DT.SQ) <- gsub("SQ.", "", colnames(DT.SQ))
+            fwrite(DT.SQ, paste("Data/Output/", strategy, "_", test, "_", treatment, "_SQ.csv", sep = ""))
+            rm(DT.SQ)
+
+        }
+
+        lapply(listoftreatments, readtreatment)
+
+    }
+
+    lapply(listoftests, readtest)
+
+
+
 
 }
 
 # Used to read each type of *.csv file
 Readdata <- function(fn) {
-    dt_temp <- fread(paste("Data/Output/",fn,sep = ""), sep = ",")
+    dt_temp <- fread(paste("Data/Output/", fn, sep = ""), sep = ",")
 
     dt_temp
 
 }
-
-ReadStrategy2 <- function(fn) {
-
-    dt_temp <- readRDS(paste("Data/Output/", fn, sep = ""))
-
-    dt_temp
-
-}
-
-combineS2files <- function(fn) {
-
-    all.S2.files <- list.files(path = "Data/Output", pattern = fn)
-    mylist <- lapply(all.S2.files, ReadStrategy2)
-    mylist[[2]] <- mylist[[2]][, cycle := cycle + 1]
-    mylist[[3]] <- mylist[[3]][, cycle := cycle + 2]
-    mylist[[4]] <- mylist[[4]][, cycle := cycle + 3]
-    mylist[[5]] <- mylist[[5]][, cycle := cycle + 4]
-    mylist[[6]] <- mylist[[6]][, cycle := cycle + 5]
-    mylist[[7]] <- mylist[[7]][, cycle := cycle + 6]
-    mylist[[8]] <- mylist[[8]][, cycle := cycle + 7]
-    mylist[[9]] <- mylist[[9]][, cycle := cycle + 8]
-    mylist[[10]] <- mylist[[10]][, cycle := cycle + 9]
-    tempDT <- rbindlist(mylist, fill = TRUE)
-    saveRDS(tempDT, paste("Data/Output/", fn, ".rds", sep = ""))
-
-    # Deletes the files
-    unlink(lapply("Data/Output/", paste, all.S2.files, sep = "")[[1]])
-
-}
-
-DoStrategy2 <- function(start.year, cycles) {
-
-    modelinflow <- TRUE
-    #--------------------- S2 4R ---------------------------#
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "4R", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.QTFGIT.4R.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST05", treatment = "4R", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST05.4R.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "4R", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST10.4R.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "4R", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST15.4R.rds", sep = ""))
-
-    #--------------------- S2 3HP ---------------------------#
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "3HP", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.QTFGIT.3HP.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST05", treatment = "3HP", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST05.3HP.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "3HP", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST10.3HP.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "3HP", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST15.3HP.rds", sep = ""))
-
-    #--------------------- S2 9H ---------------------------#
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "9H", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.QTFGIT.9H.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST05", treatment = "9H", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST05.9H.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "9H", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST10.9H.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "9H", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST15.9H.rds", sep = ""))
-
-    #--------------------- S2 6H ---------------------------#
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "QTFGIT", treatment = "6H", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.QTFGIT.6H.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST05", treatment = "6H", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST05.6H.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST10", treatment = "6H", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST10.6H.rds", sep = ""))
-
-    pop.output <- pop.master[YARP == year][, cycle := 0]
-    pop.output <- RunModel(pop.output, strategy = S2, testing = "TST15", treatment = "6H", start.year, cycles, modelinflow)
-    saveRDS(pop.output, paste("Data/Output/", start.year, "-S2.TST15.6H.rds", sep = ""))
-
-    #--------------------- END OF S2 ---------------------------#
-
-
-
-
-
-}
-
-
-
 
 # Converts a rate into a probability
 RateToProb <- function(r, to = 1, per = 1) {
@@ -584,54 +494,3 @@ RateToProb <- function(r, to = 1, per = 1) {
     1 - exp(-r * to)
 }
 
-
-#transMatrix4R <- DefineTransition(
-#CMP, param$POP * (1 - param$TESTSP) * param$TREATR, param$POP * (1 - param$TESTSP) * (1 - param$TREATR), 0, param$POP * param$TESTSP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, CMP, param$POP * param$TESTSN * param$TREATR, 0, 0, 0, param$POP * param$TESTSN * (1 - param$TREATR), 0, 0, param$POP * (1 - param$TESTSN), 0, 0, param$RR, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, CMP, 0.04 * param$RR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, param$TBMR, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, param$RR, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, param$TBMR, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, param$RR, 0, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$TBMR, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, param$TBMR, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, state.names = state.names)
-
-## Baseline transition matrix
-#transMatrixBaseline <- DefineTransition(CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, param$RR, 0, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, param$TBMR, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, CMP, 0, 0, 0, 0, param$MR,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-#0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-#state.names = state.names)

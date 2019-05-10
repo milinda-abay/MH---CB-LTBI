@@ -1,34 +1,19 @@
-# Managing output files
 
-CreateOutput("S0_12", "No Test", "No Treatment")
-CreateOutput("S0_345", "No Test", "No Treatment")
 
 # find and replace S# as required. e.g S5 to S1
 
-CreateOutput("S3", "QTFGIT", "4R")
-CreateOutput("S3", "TST05", "4R")
-CreateOutput("S3", "TST10", "4R")
-CreateOutput("S3", "TST15", "4R")
-CreateOutput("S3", "QTFGIT", "3HP")
-CreateOutput("S3", "TST05", "3HP")
-CreateOutput("S3", "TST10", "3HP")
-CreateOutput("S3", "TST15", "3HP")
-CreateOutput("S3", "QTFGIT", "9H")
-CreateOutput("S3", "TST05", "9H")
-CreateOutput("S3", "TST10", "9H")
-CreateOutput("S3", "TST15", "9H")
-CreateOutput("S3", "QTFGIT", "6H")
-CreateOutput("S3", "TST05", "6H")
-CreateOutput("S3", "TST10", "6H")
-CreateOutput("S3", "TST15", "6H")
+x <- getwd()
 
-#  To combine S2 files 
-filenames <- list.files(path = "Data/Output", pattern = "S2")
-filenames <- unique(substr(filenames, 6, 30))
-filenames <- gsub(".rds", "", filenames)
-lapply(filenames, combineS2files)
+# output RDS files on external hard disk
+setwd("D:/")
 
 
+CreateOutput("S0_12")
+CreateOutput("S0_345")
+CreateOutput("S1")
+CreateOutput("S3")
+CreateOutput("S4")
+CreateOutput("S5")
 
 # Create output files for PowerBI i.e splitting each output into four files
 

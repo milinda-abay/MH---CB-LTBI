@@ -180,27 +180,31 @@ Get.TREAT <- function(S, treat) {
 # look up target population percentage
 Get.POP <- function(DT, strategy, markov.cycle) {
     
-    if (markov.cycle != 0 && strategy$myname == "S2") {
-
-        0
-    } else if (strategy$myname == "S1") {
+    
+    if (strategy$myname == "S1") {
 
         1
 
+    } else if (strategy$myname == "S2") {
+
+        ifelse(DT[, YARP] == 2020 + markov.cycle, .6, 0)
+
+    } else if (strategy$myname == "S0_12" || strategy$myname == "S0_345") {
+
+        # not needed, baseline transition matrix takes care of it but...
+        0
+
     } else {
 
+        # leaves S3, S4 & S5
         ifelse(DT$YARP < 2020,
            switch(strategy$myname,
-                  S0_12 = 0,
-                  S0_345 =0,
-                  S1 = 0,
-                  S2 = 0,
                   S3 = 0.05,
                   S4 = 0.10,
                   S5 = 0.15,
-                  0
+                  stop("Error in Pop")
                   ),
-                  0.6
+                  stop("Error in Pop DT YARP")
                   )
     }
 
@@ -473,9 +477,15 @@ RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycle
 }
 
 
-DoRunModel <- function(strategy, testing, treatment, start.year, cycles) {
+DoRunModel <- function(strategy, start.year, cycles) {
 
     strategy$myname <- deparse(substitute(strategy))
+
+    listofstrategy <- c("S0_12", "S1", "S2", "S0_345", "S3", "S4", "S5")
+    listoftests <- c("QTFGIT", "TST05", "TST10", "TST15")
+    listoftreatments <- c("4R", "3HP", "6H", "9H")
+
+
 
     if (strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname =="S0_12") {
 
@@ -487,70 +497,97 @@ DoRunModel <- function(strategy, testing, treatment, start.year, cycles) {
 
     }
 
-
     year <- start.year
 
-    if (nrow(pop.master) < 501) {
+    dostrategy <- function(strategy, listoftests, listoftreatments) {
 
-        pop.output <- pop.master[YARP <= year][, cycle := 0]
-        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
-        saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", testing, ".", treatment, ".rds", sep = ""))
+        dotest <- function(test) {
 
-    } else {
+            dotreatment <- function(treatment) {
 
 
-        pop.output <- pop.master[YARP <= year][, cycle := 0][1:50000]
-        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
-        saveRDS(pop.output, "Data/Output/pop.output1.rds")
+                if (nrow(pop.master) < 10001 || strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname == "S0_12") {
+
+                    if (strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname == "S0_12") {
+                        pop.output <- pop.master[YARP == year][, cycle := 0]
+
+                    } else {
+
+                        pop.output <- pop.master[YARP <= year][, cycle := 0]
+                    }
+
+                    
+                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, ".rds", sep = ""))
+
+                } else {
+                    
+
+                    pop.output <- pop.master[YARP <= year][, cycle := 0][1:50000]
+                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    saveRDS(pop.output, "Data/Output/pop.output1.rds")
 
 
-        pop.output <- pop.master[YARP <= year][, cycle := 0][50001:100000]
-        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
-        saveRDS(pop.output, "Data/Output/pop.output2.rds")
-
-
-
-        pop.output <- pop.master[YARP <= year][, cycle := 0][100001:150000]
-        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
-        saveRDS(pop.output, "Data/Output/pop.output3.rds")
-
-
-
-        pop.output <- pop.master[YARP <= year][, cycle := 0][150001:200000]
-        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
-        saveRDS(pop.output, "Data/Output/pop.output4.rds")
-
-
-        pop.output <- pop.master[YARP <= year][, cycle := 0][200001:250000]
-        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
-        saveRDS(pop.output, "Data/Output/pop.output5.rds")
+                    pop.output <- pop.master[YARP <= year][, cycle := 0][50001:100000]
+                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    saveRDS(pop.output, "Data/Output/pop.output2.rds")
 
 
 
-        pop.output <- pop.master[YARP <= year][, cycle := 0][250001:300000]
-        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
-        saveRDS(pop.output, "Data/Output/pop.output6.rds")
+                    pop.output <- pop.master[YARP <= year][, cycle := 0][100001:150000]
+                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    saveRDS(pop.output, "Data/Output/pop.output3.rds")
 
 
 
-        pop.output <- pop.master[YARP <= year][, cycle := 0][300001:324816]
-        pop.output <- RunModel(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow)
-        saveRDS(pop.output, "Data/Output/pop.output7.rds")
+                    pop.output <- pop.master[YARP <= year][, cycle := 0][150001:200000]
+                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    saveRDS(pop.output, "Data/Output/pop.output4.rds")
+
+
+                    pop.output <- pop.master[YARP <= year][, cycle := 0][200001:250000]
+                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    saveRDS(pop.output, "Data/Output/pop.output5.rds")
 
 
 
-        pop.output1 <- readRDS("Data/Output/pop.output1.rds")
-        pop.output2 <- readRDS("Data/Output/pop.output2.rds")
-        pop.output3 <- readRDS("Data/Output/pop.output3.rds")
-        pop.output4 <- readRDS("Data/Output/pop.output4.rds")
-        pop.output5 <- readRDS("Data/Output/pop.output5.rds")
-        pop.output6 <- readRDS("Data/Output/pop.output6.rds")
-        pop.output7 <- readRDS("Data/Output/pop.output7.rds")
+                    pop.output <- pop.master[YARP <= year][, cycle := 0][250001:300000]
+                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    saveRDS(pop.output, "Data/Output/pop.output6.rds")
 
 
-        pop.output <- rbind(pop.output1, pop.output2, pop.output3, pop.output4, pop.output5, pop.output6, pop.output7)
 
-        saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", testing, ".", treatment, ".rds", sep = ""))
+                    pop.output <- pop.master[YARP <= year][, cycle := 0][300001:nrow(pop.master)]
+                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    saveRDS(pop.output, "Data/Output/pop.output7.rds")
+
+
+
+                    pop.output1 <- readRDS("Data/Output/pop.output1.rds")
+                    pop.output2 <- readRDS("Data/Output/pop.output2.rds")
+                    pop.output3 <- readRDS("Data/Output/pop.output3.rds")
+                    pop.output4 <- readRDS("Data/Output/pop.output4.rds")
+                    pop.output5 <- readRDS("Data/Output/pop.output5.rds")
+                    pop.output6 <- readRDS("Data/Output/pop.output6.rds")
+                    pop.output7 <- readRDS("Data/Output/pop.output7.rds")
+
+
+                    pop.output <- rbind(pop.output1, pop.output2, pop.output3, pop.output4, pop.output5, pop.output6, pop.output7)
+                    saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, ".rds", sep = ""))
+
+                }
+         
+            }
+
+            lapply(listoftreatments, dotreatment)
+                                   
+        }
+
+            lapply(listoftests, dotest)
+
     }
+
+    dostrategy(strategy, listoftests, listoftreatments)
+          
 
 }
