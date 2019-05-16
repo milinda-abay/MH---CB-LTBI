@@ -33,7 +33,9 @@ DefineParameters <- function(...) {
     structure(unevaluated.parameter.list, class = c("uneval_parameters", class(unevaluated.parameter.list)))
 }
 
+
 DefineStates <- function(...) {
+    # Defines state values
 
     state.values <- lazyeval::lazy_dots(...)
     structure(state.values, class = c("state", class(state.values)))
@@ -55,12 +57,6 @@ DefineStrategy <- function(..., transition.matrix) {
 }
 
 
-
-
-
-# The following functions perform various calculations at model runtime.
-#------------------------------------------------------------------------#
-
 CheckComplement <- function(transition.matrix, dimension) {
     # Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
 
@@ -78,6 +74,10 @@ CheckComplement <- function(transition.matrix, dimension) {
         stop("Only a maximum of one 'CMP' is allowed per matrix row.")
     }
 }
+
+
+# The following functions perform various calculations at model runtime.
+#------------------------------------------------------------------------#
 
 CreateArgumentList <- function(state.names, state.number) {
 
@@ -150,10 +150,10 @@ Get.RR <- function(xDT, year) {
 
 }
 
-# look up TB mortality rate
+# Look up TB mortality rate
 Get.TBMR <- function(xDT, year) {
-    
-    DT <- copy(xDT[,.(AGEP, SEXP)])
+
+    DT <- copy(xDT[, .(AGEP, SEXP)])
 
     # To lookup all ages beyond 95 & 97
     DT[AGEP > 95 & SEXP == "Male", AGEP := 95]
@@ -163,27 +163,27 @@ Get.TBMR <- function(xDT, year) {
 
 }
 
-# look up test sensitivity / specificity 
+# Look up test sensitivity / specificity 
 Get.TEST <- function(S, testing) {
 
     as.numeric(tests.dt[tests == testing, ..S])
 
 }
 
-# look up treatment completion rate
+# Look up treatment completion rate
 Get.TREAT <- function(S, treat) {
 
     as.numeric(treatment.dt[treatment == treat, ..S])
 
 }
 
-# look up target population percentage
+# Look up target population percentage
 Get.POP <- function(DT, strategy, markov.cycle) {
-    
-    
+
+
     if (strategy$myname == "S1") {
 
-        1
+        ifelse(DT[, YARP] == 2020 + markov.cycle, .9, 0)
 
     } else if (strategy$myname == "S2") {
 
@@ -228,7 +228,7 @@ Get.DISCOUNT <- function() {
 
 # Calculates the CMP value after evaluation of the promise objects in parameter and transition matrix.
 CalculateCMP <- function(tM, l, z) {
-    
+
     y <- unlist(tM)
 
     dim(y) <- c(z, l, l)
@@ -263,7 +263,6 @@ CalculateCMP <- function(tM, l, z) {
 
     data.table(y)
 }
-
 
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
 PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, state.cost, utility) {
@@ -312,10 +311,9 @@ PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, s
 
 }
 
-
 # The primary function RunModel() calls to perform row by row transition calculations.
 GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle) {
-    
+
     # collapsing the promise object 
     testing
     treatment
@@ -364,14 +362,11 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     utility <- param$UTILITY
 
     # a Hack for YARP < 2016, vic mortality doesn’t have data to look up
-    
     param$MR[is.na(param$MR)] <- 0.01
     param$RR[is.na(param$RR)] <- 0.0013
     param$TBMR[is.na(param$TBMR)] <- 0.01
 
-    
-
-
+      
     # assign the current environment for evaluation. 
     for (i in 1:length(transMatrix)) {
 
@@ -392,7 +387,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
             tM[[i]] <- rep(tM[[i]], times = z)
         }
     }
-    
+
     # Manipulates the tM to calculate the CMP
     tM <- CalculateCMP(tM, l, z)
 
@@ -413,7 +408,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     # browser() # uncomment for testing
 
     results <- cbind(results[[1]], results[[2]], results[[3]], results[[4]], results[[5]])
-         
+
 }
 
 
@@ -423,7 +418,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
 
 # The main model runtime loop 
 RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycles, modelinflow) {
-    
+
     #To keep track of the current strategy name
     if (is.null(strategy$myname)) {
         strategy$myname <- deparse(substitute(strategy))
@@ -439,7 +434,7 @@ RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycle
         writeLines(sprintf("\nCommencing Markov cycle %i", markov.cycle))
         writeLines(sprintf("Current number of populations in the working matrix is %i", nrow(pop.calculated)))
         print(pop.calculated[1:10, .N, by = .(AGEP, cycle)])
-        
+
         # The vectorised solution where the entire table is passed to GetStateCounts
         pop.calculated[, c(new.state.names) := GetStateCounts(pop.calculated, year, strategy, testing, treatment, markov.cycle)]
 
@@ -477,6 +472,7 @@ RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycle
 }
 
 
+# convenience function to loop over all the testing, treatment and sampling model runs
 DoRunModel <- function(strategy, start.year, cycles) {
 
     strategy$myname <- deparse(substitute(strategy))
@@ -487,7 +483,7 @@ DoRunModel <- function(strategy, start.year, cycles) {
 
 
 
-    if (strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname =="S0_12") {
+    if (strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname == "S0_12") {
 
         modelinflow <- TRUE
 
@@ -499,6 +495,7 @@ DoRunModel <- function(strategy, start.year, cycles) {
 
     year <- start.year
 
+
     dostrategy <- function(strategy, listoftests, listoftreatments) {
 
         dotest <- function(test) {
@@ -508,20 +505,47 @@ DoRunModel <- function(strategy, start.year, cycles) {
 
                 if (nrow(pop.master) < 10001 || strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname == "S0_12") {
 
-                    if (strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname == "S0_12") {
+                    if (strategy$myname == "S2" || strategy$myname == "S0_12") {
                         pop.output <- pop.master[YARP == year][, cycle := 0]
+
+                    } else if (strategy$myname == "S1") {
+
+
+                        pop.output <- pop.master[YARP >= year][, cycle := 0]
+                        pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles = 1, modelinflow = FALSE)
+                        pop.output <- pop.output[cycle == 1]
+                        pop.output[, cycle := 0]
+                        pop.output[, AGEP := AGEP - 1]
+
+                        colname <- colnames(pop.output[, V.p.sus:V.p.death])
+                        colname <- c(colname, colnames(pop.output[, FC.p.sus:FC.p.death]))
+
+                        pop.output[, c(colname) := as.numeric(NA),]
+
+                        assign("pop.master", pop.output, pos = 1,)
+                        pop.output <- pop.master[YARP == year][, cycle := 0]
+
 
                     } else {
 
                         pop.output <- pop.master[YARP <= year][, cycle := 0]
+
                     }
 
-                    
+
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, ".rds", sep = ""))
 
+                    if (strategy$myname == "S1") {
+
+                        pop.temp <- CreatePopulationMaster()
+                        assign("pop.master", pop.temp, pos = 1,)
+
+
+                    }
+
                 } else {
-                    
+
 
                     pop.output <- pop.master[YARP <= year][, cycle := 0][1:50000]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
@@ -576,18 +600,19 @@ DoRunModel <- function(strategy, start.year, cycles) {
                     saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, ".rds", sep = ""))
 
                 }
-         
+
             }
 
             lapply(listoftreatments, dotreatment)
-                                   
+
         }
 
-            lapply(listoftests, dotest)
+        lapply(listoftests, dotest)
 
     }
 
     dostrategy(strategy, listoftests, listoftreatments)
-          
+
 
 }
+

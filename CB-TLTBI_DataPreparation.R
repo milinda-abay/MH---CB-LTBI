@@ -33,11 +33,8 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     #						
     # TODO -> Based on census datasets (2006,2011,2016) estimate a NUMP distribution for YARP > 2018  by LGA and ISO3.						
     #
-
-
-
+       
     pop.master <- aust.vic[, .(AGEP, ISO3, YARP, NUMP, LTBP, AGERP = AGEP - (2016L - YARP), SEXP)]
-
 
     # Also creating migrant cohort arrivals for YARP > 2016. i.e. 2017 to 2025.
     # again this is for validating the model at runtime.
@@ -46,7 +43,7 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     pop.master <- pop.master[YARP != 2016]
 
 
-
+    # Create new arrival cohorts 
     pop.master.2016 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2016L, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2017 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2017L, NUMP, LTBP, AGERP, SEXP),]
     pop.master.2018 <- pop.master[YARP == 2015, .(AGEP = AGEP - 1, ISO3, YARP = 2018L, NUMP, LTBP, AGERP, SEXP),]
@@ -73,6 +70,7 @@ CreatePopulationMaster <- function(Modify = FALSE) {
        pop.master.2022, pop.master.2023, pop.master.2024, pop.master.2025, pop.master.2026,
        pop.master.2027, pop.master.2028, pop.master.2029, pop.master.2030)
 
+
     # Must order the pop.master table by YARP due to sub-setting and recombining. 
     setkey(pop.master, YARP, SEXP, AGEP, ISO3)
 
@@ -90,17 +88,6 @@ CreatePopulationMaster <- function(Modify = FALSE) {
     pop.master[YARP == 2018, AGEP := AGEP + 2]
     pop.master[YARP == 2019, AGEP := AGEP + 1]
 
-
-    if (Modify) {
-
-        # recheck this logic! Only for S1 100% off-shore testing.
-        # Making the cohort one year younger and starting them from 2019 in p.sus and p.ltbi.
-        browser()
-        pop.output <- pop.master[YARP >= 2020][, cycle := 0]
-        pop.output <- RunModel(pop.output, strategy = S1, testing = "", treatment = "", start.year = 2020, cycles = 1, modelinflow = FALSE)
-        pop.master <- pop.output[, AGEP := AGEP - 1]
-
-    }
 
     pop.master
 
@@ -374,8 +361,22 @@ CreateRDSDataFiles <- function() {
 
 }
 
-# Converts each *.rds files to five(S, SC, SQ, F & FC) *.csv files
+
 CreateOutput <- function(strategy) {
+    # Uses the strategy to create iteration logic. It opens each output *.rds file and converts it to 
+    # five(S, SC, SQ, F & FC) *.csv files
+
+    # Args: 
+    #   A strategy character vector
+
+    # Return:
+    #   No returns, but it saves the following *.csv files in the ./Data/Output folder
+    #   S#_TEST#_TREATMENT#_S.csv - State counts 
+    #   S#_TEST#_TREATMENT#_SC.csv - State cost
+    #   S#_TEST#_TREATMENT#_SQ.csv - State QALY
+    #   S#_TEST#_TREATMENT#_F.csv - Flow count
+    #   S#_TEST#_TREATMENT#_FC.csv - Flow cost
+
 
     if (strategy == "S0_12" || strategy == "S0_345") {
 
@@ -391,9 +392,21 @@ CreateOutput <- function(strategy) {
 
 
     readtest <- function(test) {
+        # Args: 
+        #   A character vector with "test"
 
+
+        # Return:
+        #   None
         readtreatment <- function(treatment) {
+            # Args: 
+            #   A character vector with "treatment"
 
+
+            # Return:
+            #   None
+
+            # Conditionals to catch the baseline strategies
             if (strategy == "S0_12") {
 
                 DT <- readRDS("Data/Output/S0_12.rds")
@@ -410,17 +423,18 @@ CreateOutput <- function(strategy) {
             }
 
 
-
+            # Creates the Strategy, Test and Treatment columns and re-orders the data.table.
             DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
             foo <- c((ncol(DT) - 2):ncol(DT), 1:(ncol(DT) - 3))
             DT <- DT[, ..foo]
 
+
+            # Identifies the column indexes to aggregate on
             colindex <- which(colnames(DT) %in% c("LTBP", "NUMP", "p.sus", "SQ.p.death"))
-
             colsToSum <- names(DT)[c(colindex[1], colindex[2], colindex[3]:colindex[4])]
-
             DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP), .SDcols = colsToSum]
 
+            # Finds the start/stop indexes of each section.
             cyc <- which(colnames(DT) == "p.sus") - 1
             psus <- which(colnames(DT) == "p.sus")
             pdeath <- which(colnames(DT) == "p.death")
@@ -477,8 +491,13 @@ CreateOutput <- function(strategy) {
 
 # Used to read each type of *.csv file
 Readdata <- function(fn) {
-    dt_temp <- fread(paste("Data/Output/", fn, sep = ""), sep = ",")
+    # Args:
+    #   fn - A file name character vector
 
+    # Return:
+    #   dt_temp - a data.table of the file contents.
+
+    dt_temp <- fread(paste("Data/Output/", fn, sep = ""), sep = ",")
     dt_temp
 
 }

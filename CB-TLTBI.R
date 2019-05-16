@@ -1,10 +1,6 @@
 # Coding style
 # https://google.github.io/styleguide/Rguide.xml
 
-# Change working directory as required
-# setwd("M:/Documents/@Projects/MH - CB LTBI/")
-
-
 
 # Load libraries. (not needed if using the *.rds data files objects)
 #library(tidyverse)
@@ -105,14 +101,14 @@ utility.dt[treatment == "", c(state.names) := .(1, NA, NA, NA, NA, 1, NA, NA, NA
 
 
 unevaluated.flow.cost <- lazy(c(0, param$TESTC, param$TESTC, 0, param$TESTC,
-                 0, param$TESTC, 0, 
+                 0, param$TESTC, 0,
                  param$TESTC, 0, 0, param$TESTC, 0,
                  0, 0, 0, 0, 0,
                  0, 0))
 
 
 unevaluated.state.cost <- lazy(c(0, param$TREATC, 0, 0, 0,
-                 0, param$TREATC, 0, 
+                 0, param$TREATC, 0,
                  0, param$TBCOST, 0, 0, param$TBCOST,
                  0, param$TBCOST, 0, 0, 0,
                  0, 0))
@@ -141,7 +137,7 @@ arglist <- CreateArgumentList(state.names, state.number)
 # arglist$drop.state.name()
 
 # Save the argument list. 
-# arglist$save.list("S2.TM")
+# arglist$save.list("S1.TM")
 
 # Load the argument list
 # S1.TM
@@ -183,6 +179,7 @@ S0_12 <- DefineStrategy(p.sus, p.sus.fp.t, p.sus.fp.nt, p.sus.fp.tc, p.sus.tn,
                         p.ltbi.tbr, p.ltbi.tp.nt.tb.death, p.ltbi.fn.tb.death, p.ltbi.tb.death, p.death,
                         transition.matrix = do.call(DefineTransition, arglist.BASELINE.TM))
 
+#Baselines use the same transition matrix
 S0_345 <- S0_12
 
 
@@ -205,10 +202,9 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 
 # Uses aust.vic.rds file to create a sample input
 pop.master <- CreatePopulationMaster()
-#pop.master <- CreatePopulationMaster(Modify = TRUE)
 
-set.seed(10)
-pop.master <- pop.master[sample(.N, 2000)]
+#set.seed(10)
+#pop.master <- pop.master[sample(.N, 2000)]
 
 
 
@@ -258,3 +254,56 @@ DoRunModel(S3, start.year, cycles)
 DoRunModel(S4, start.year, cycles)
 DoRunModel(S5, start.year, cycles)
 
+
+
+#------------ Manipulating output files------------- #
+
+
+# output RDS files on external hard disk
+setwd("D:/")
+
+
+CreateOutput("S0_12")
+CreateOutput("S0_345")
+CreateOutput("S1")
+CreateOutput("S2")
+CreateOutput("S3")
+CreateOutput("S4")
+CreateOutput("S5")
+
+# Create output files for PowerBI i.e recombine each type of *.csv file into five  lookup files.
+
+all.files <- list.files(path = "Data/Output", pattern = "S.csv")
+mylist <- lapply(all.files, Readdata)
+StateCount <- rbindlist(mylist, fill = TRUE)
+rm(mylist)
+fwrite(StateCount, "Data/Output/StateCount.csv")
+rm(StateCount)
+
+all.files <- list.files(path = "Data/Output", pattern = "SC.csv")
+mylist <- lapply(all.files, Readdata)
+StateCost <- rbindlist(mylist, fill = TRUE)
+rm(mylist)
+fwrite(StateCost, "Data/Output/StateCost.csv")
+rm(StateCost)
+
+all.files <- list.files(path = "Data/Output", pattern = "F.csv")
+mylist <- lapply(all.files, Readdata)
+FlowCount <- rbindlist(mylist, fill = TRUE)
+rm(mylist)
+fwrite(FlowCount, "Data/Output/FlowCount.csv")
+rm(FlowCount)
+
+all.files <- list.files(path = "Data/Output", pattern = "FC.csv")
+mylist <- lapply(all.files, Readdata)
+FlowCost <- rbindlist(mylist, fill = TRUE)
+rm(mylist)
+fwrite(FlowCost, "Data/Output/FlowCost.csv")
+rm(FlowCost)
+
+all.files <- list.files(path = "Data/Output", pattern = "SQ.csv")
+mylist <- lapply(all.files, Readdata)
+StateQALY <- rbindlist(mylist, fill = TRUE)
+rm(mylist)
+fwrite(StateQALY, "Data/Output/StateQALY.csv")
+rm(StateQALY)
