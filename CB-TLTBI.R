@@ -62,15 +62,19 @@ new.state.names <- c(state.names, paste("V.", state.names, sep = ""),
 
 # Create a sample data table of test sensitivity & specificity
 tests.dt <- data.table(tests = c("QTFGIT", "TST05", "TST10", "TST15"), SN = c(0.76, 0.74, 0.72, 0.4),
-                       SP = c(0.97, 0.56, 0.58, 0.87), cost.primary = c(79.75, 46.10, 46.10, 46.10),
+                       SP = c(0.97, 0.56, 0.58, 0.87), cost.primary = c(79.75, 67.10, 67.10, 67.10),
                        cost.tertiary = c(122.71, 164.5, 164.5, 164.5))
 
 
 # Create a sample treatment data table
 treatment.dt <- data.table(treatment = c("4R", "9H", "3HP", "6H"),
                            rate = c(.83, .78, .82, .63),
-                           cost.primary = c(437.13, 549.22, 440.34, 436.42),
-                           cost.tertiary = c(632.38, 939.72, 596.54, 709.77))
+                           cost.primary = c(437.13, 578.87, 440.34, 436.42),
+                           cost.tertiary = c(632.38, 969.37, 596.54, 709.77))
+
+#9H cost changed from 549.22 to 578.87 and 939.72 to 969.37 respectively. 
+
+
 
 # Create a sample utility data table
 # TODO: fix hard coded data table. It should take state.names and create the columns.
@@ -114,7 +118,11 @@ unevaluated.state.cost <- lazy(c(0, param$TREATC, 0, 0, 0,
                  0, 0))
 
 
-
+unevaluated.state.utility <- lazy(c(0, param$TREATC, 0, 0, 0,
+                 0, param$TREATC, 0,
+                 0, param$TBCOST, 0, 0, param$TBCOST,
+                 0, param$TBCOST, 0, 0, 0,
+                 0, 0))
 
 #Sample commands demonstrating the functional argument list.
 
@@ -147,7 +155,7 @@ arglist <- CreateArgumentList(state.names, state.number)
 arglist.S1.TM <- arglist$load.list("S1.TM")
 arglist.S2.TM <- arglist$load.list("S2.TM")
 arglist.BASELINE.TM <- arglist$load.list("BASELINE.TM")
-
+arglist.BASELINE.S1.TM <- arglist$load.list("BASELINE.S1.TM")
 
 CreateStates(state.names) # instantiates a set of states objects with default values
 
@@ -182,6 +190,16 @@ S0_12 <- DefineStrategy(p.sus, p.sus.fp.t, p.sus.fp.nt, p.sus.fp.tc, p.sus.tn,
 #Baselines use the same transition matrix
 S0_345 <- S0_12
 
+# New baseline for S1
+S0_1 <- DefineStrategy(p.sus, p.sus.fp.t, p.sus.fp.nt, p.sus.fp.tc, p.sus.tn,
+                        p.ltbi, p.ltbi.tp.t, p.ltbi.tp.tc, p.ltbi.tp.nt, p.ltbi.tp.nt.tb,
+                        p.ltbi.tp.nt.tbr, p.ltbi.fn, p.ltbi.fn.tb, p.ltbi.fn.tbr, p.ltbi.tb,
+                        p.ltbi.tbr, p.ltbi.tp.nt.tb.death, p.ltbi.fn.tb.death, p.ltbi.tb.death, p.death,
+                        transition.matrix = do.call(DefineTransition, arglist.BASELINE.S1.TM))
+
+
+
+
 
 # Creates an unevaluated set of parameters
 parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
@@ -203,8 +221,8 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 # Uses aust.vic.rds file to create a sample input
 pop.master <- CreatePopulationMaster()
 
-#set.seed(10)
-#pop.master <- pop.master[sample(.N, 2000)]
+set.seed(10)
+pop.master <- pop.master[sample(.N, 2000)]
 
 
 
@@ -227,6 +245,8 @@ saveRDS(pop.output, "Data/Output/S0_12.rds")
 
 #--------------------- END OF S0_12 ---------------------------#
 
+
+DoRunModel(S0_1, start.year, cycles)
 
 
 
@@ -263,6 +283,8 @@ DoRunModel(S5, start.year, cycles)
 setwd("D:/")
 
 
+
+CreateOutput("S0_1")
 CreateOutput("S0_12")
 CreateOutput("S0_345")
 CreateOutput("S1")

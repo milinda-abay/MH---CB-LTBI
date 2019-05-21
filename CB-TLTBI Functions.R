@@ -128,7 +128,7 @@ CreateArgumentList <- function(state.names, state.number) {
 }
 
 # Look up the mortality rate from vic.mortality
-Get.MR <- function(xDT, year, rate.assumption = "High") {
+Get.MR <- function(xDT, year, rate.assumption = "Med") {
 
     DT <- copy(xDT[, .(AGEP, SEXP)])
 
@@ -179,11 +179,11 @@ Get.TREAT <- function(S, treat) {
 
 # Look up target population percentage
 Get.POP <- function(DT, strategy, markov.cycle) {
+    browser()
 
+    if (strategy$myname == "S1" || strategy$myname == "S0_1") {
 
-    if (strategy$myname == "S1") {
-
-        ifelse(DT[, YARP] == 2020 + markov.cycle, .9, 0)
+        1
 
     } else if (strategy$myname == "S2") {
 
@@ -266,7 +266,7 @@ CalculateCMP <- function(tM, l, z) {
 
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
 PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, state.cost, utility) {
-
+    browser()
     # Make the current data matrix a list
     bar <- unlist(dM)
 
@@ -300,10 +300,10 @@ PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, s
 
     flow.cost <- discount * flow.cost
     state.cost <- discount * state.cost
+    utility <- discount * utility
 
     flow.cost <- flows[, Map("*", flow.cost, .SD)]
     count.cost <- counts[, Map("*", state.cost, .SD)]
-
 
     state.QALY <- counts[, Map("*", utility, .SD)]
 
@@ -483,7 +483,7 @@ DoRunModel <- function(strategy, start.year, cycles) {
 
 
 
-    if (strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname == "S0_12") {
+    if (strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname == "S0_12" || strategy$myname == "S0_1") {
 
         modelinflow <- TRUE
 
@@ -495,6 +495,13 @@ DoRunModel <- function(strategy, start.year, cycles) {
 
     year <- start.year
 
+    if (strategy$myname == "S0_1") {
+
+        listoftests <- c("QTFGIT")
+        listoftreatments <- c("4R")
+        
+    }
+
 
     dostrategy <- function(strategy, listoftests, listoftreatments) {
 
@@ -503,12 +510,13 @@ DoRunModel <- function(strategy, start.year, cycles) {
             dotreatment <- function(treatment) {
 
 
-                if (nrow(pop.master) < 10001 || strategy$myname == "S1" || strategy$myname == "S2" || strategy$myname == "S0_12") {
+                if (nrow(pop.master) < 10001 || strategy$myname == "S1" || strategy$myname == "S2"
+                || strategy$myname == "S0_12" || strategy$myname == "S0_1") {
 
                     if (strategy$myname == "S2" || strategy$myname == "S0_12") {
                         pop.output <- pop.master[YARP == year][, cycle := 0]
 
-                    } else if (strategy$myname == "S1") {
+                    } else if (strategy$myname == "S1" || strategy$myname == "S0_1") {
 
 
                         pop.output <- pop.master[YARP >= year][, cycle := 0]

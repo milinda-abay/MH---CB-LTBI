@@ -378,7 +378,7 @@ CreateOutput <- function(strategy) {
     #   S#_TEST#_TREATMENT#_FC.csv - Flow cost
 
 
-    if (strategy == "S0_12" || strategy == "S0_345") {
+    if (strategy == "S0_12" || strategy == "S0_345" || strategy == "S0_1") {
 
         listoftests <- c("No Test")
         listoftreatments <- c("No Treatment")
@@ -416,12 +416,15 @@ CreateOutput <- function(strategy) {
 
                 DT <- readRDS("Data/Output/S0_345.rds")
 
+            } else if (strategy == "S0_1") {
+
+                DT <- readRDS("Data/Output/S0_1.rds")
+
             } else {
 
                 DT <- readRDS(paste("Data/Output/", strategy, ".", test, ".", treatment, ".rds", sep = ""))
 
             }
-
 
             # Creates the Strategy, Test and Treatment columns and re-orders the data.table.
             DT[, c("Strategy", "Test", "Treatment") := .(strategy, test, treatment)]
@@ -432,7 +435,24 @@ CreateOutput <- function(strategy) {
             # Identifies the column indexes to aggregate on
             colindex <- which(colnames(DT) %in% c("LTBP", "NUMP", "p.sus", "SQ.p.death"))
             colsToSum <- names(DT)[c(colindex[1], colindex[2], colindex[3]:colindex[4])]
-            DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP), .SDcols = colsToSum]
+
+            if (strategy == "S0_345" || strategy == "S3" || strategy == "S4" || strategy == "S5") {
+
+                # make AGE @ model start to enable aggregation by cycle
+                DT[, AGEP := AGEP - cycle,]
+                DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGEP, SEXP), .SDcols = colsToSum]
+
+            } else {
+
+                DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGERP, YARP, SEXP), .SDcols = colsToSum]
+                colindex <- which(colnames(DT) %in% c("LTBP", "NUMP", "p.sus", "SQ.p.death"))
+                colsToSum <- names(DT)[c(colindex[1], colindex[2], colindex[3]:colindex[4])]
+                DT <- DT[, lapply(.SD, sum, na.rm = TRUE), by = .(Strategy, Test, Treatment, ISO3, AGERP, SEXP), .SDcols = colsToSum]
+                setnames(DT, "AGERP", "AGEP")
+            }
+
+
+            
 
             # Finds the start/stop indexes of each section.
             cyc <- which(colnames(DT) == "p.sus") - 1
@@ -446,7 +466,6 @@ CreateOutput <- function(strategy) {
             FCpdeath <- which(colnames(DT) == "FC.p.death")
             SQpsus <- which(colnames(DT) == "SQ.p.sus")
             SQpdeath <- which(colnames(DT) == "SQ.p.death")
-
 
             # State count table
             DT.S <- DT[, c(1:..pdeath)]
@@ -483,10 +502,7 @@ CreateOutput <- function(strategy) {
     }
 
     lapply(listoftests, readtest)
-
-
-
-
+           
 }
 
 # Used to read each type of *.csv file
