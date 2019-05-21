@@ -86,20 +86,21 @@ utility.dt[treatment == "6H", c(state.names) := .(1, 0.99949, 1, 1, 1, 1, 0.9994
                                 1, 1, 0.75, 0.94, 1, 0.75, 0.94, 0.75,
                                 0.94, 0, 0, 0, 0)]
 
-utility.dt[treatment == "9H", c(state.names) := .(1, 0.9993625, 1, 1, 1, 1, 0.9993625,
+utility.dt[treatment == "9H", c(state.names) := .(1, 0.99937375, 1, 1, 1, 1, 0.99937375,
                                 1, 1, 0.75, 0.94, 1, 0.75, 0.94, 0.75,
                                 0.94, 0, 0, 0, 0)]
 
-utility.dt[treatment == "4R", c(state.names) := .(1, 0.9997705, 1, 1, 1, 1, 0.9997705,
+utility.dt[treatment == "4R", c(state.names) := .(1, 0.999775, 1, 1, 1, 1, 0.999775,
                                 1, 1, 0.75, 0.94, 1, 0.75, 0.94, 0.75,
                                 0.94, 0, 0, 0, 0)]
 
-utility.dt[treatment == "3HP", c(state.names) := .(1, 0.999592, 1, 1, 1, 1, 0.999592,
+utility.dt[treatment == "3HP", c(state.names) := .(1, 0.9995992, 1, 1, 1, 1, 0.9995992,
                                 1, 1, 0.75, 0.94, 1, 0.75, 0.94, 0.75,
                                 0.94, 0, 0, 0, 0)]
 
 utility.dt[treatment == "", c(state.names) := .(1, NA, NA, NA, NA, 1, NA, NA, NA,
                               NA, NA, NA, NA, NA, 0.75, 0.94, NA, NA, 0, 0)]
+
 
 
 
