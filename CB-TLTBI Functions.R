@@ -193,9 +193,11 @@ Get.POP <- function(DT, strategy, markov.cycle) {
         # not needed, baseline transition matrix takes care of it but...
         0
 
-    } else {
-
-        # leaves S3, S4 & S5
+    } else if (( strategy$myname == "S3" || strategy$myname == "S4"|| strategy$myname == "S5" ) &&
+               markov.cycle <= 5 ) {
+      
+      
+      # leaves S3, S4 & S5
         ifelse(DT$YARP < 2020,
             switch(strategy$myname,
                 S3 = 0.05,
@@ -206,6 +208,9 @@ Get.POP <- function(DT, strategy, markov.cycle) {
             stop("Error in Pop DT YARP")
         )
 
+    } else {
+      
+      0
     }
 
 }
@@ -362,7 +367,8 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     state.cost <- lazy_eval(unevaluated.state.cost)
     utility <- param$UTILITY
 
-    # a Hack for YARP < 2016, vic mortality doesn’t have data to look up
+    # a Hack for YARP < 2016, vic mortality doesn?t have data to look up
+    
     param$MR[is.na(param$MR)] <- 0.01
     param$RR[is.na(param$RR)] <- 0.0013
     param$TBMR[is.na(param$TBMR)] <- 0.01
