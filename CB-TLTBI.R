@@ -70,7 +70,8 @@ tests.dt <- data.table(tests = c("QTFGIT", "TST05", "TST10", "TST15"), SN = c(0.
 treatment.dt <- data.table(treatment = c("4R", "9H", "3HP", "6H"),
                            rate = c(.83, .78, .82, .63),
                            cost.primary = c(437.13, 578.87, 440.34, 436.42),
-                           cost.tertiary = c(632.38, 969.37, 596.54, 709.77))
+                           cost.tertiary = c(632.38, 969.37, 596.54, 709.77),
+                           sae = c(0, 0.00000025, 0.00000016, 0.0000002))
 
 #9H cost changed from 549.22 to 578.87 and 939.72 to 969.37 respectively. 
 
@@ -82,11 +83,11 @@ utility.dt <- data.table(treatment = c("", "4R", "9H", "3HP", "6H"))
 utility.dt[, c(state.names) := as.numeric(NA)]
 
 
-utility.dt[treatment == "6H", c(state.names) := .(1, 0.99949, 1, 1, 1, 1, 0.99949,
+utility.dt[treatment == "6H", c(state.names) := .(1, 0.9995, 1, 1, 1, 1, 0.9995,
                                 1, 1, 0.75, 0.94, 1, 0.75, 0.94, 0.75,
                                 0.94, 0, 0, 0, 0)]
 
-utility.dt[treatment == "9H", c(state.names) := .(1, 0.99937375, 1, 1, 1, 1, 0.99937375,
+utility.dt[treatment == "9H", c(state.names) := .(1, 0.999375, 1, 1, 1, 1, 0.999375,
                                 1, 1, 0.75, 0.94, 1, 0.75, 0.94, 0.75,
                                 0.94, 0, 0, 0, 0)]
 
@@ -94,12 +95,16 @@ utility.dt[treatment == "4R", c(state.names) := .(1, 0.999775, 1, 1, 1, 1, 0.999
                                 1, 1, 0.75, 0.94, 1, 0.75, 0.94, 0.75,
                                 0.94, 0, 0, 0, 0)]
 
-utility.dt[treatment == "3HP", c(state.names) := .(1, 0.9995992, 1, 1, 1, 1, 0.9995992,
+utility.dt[treatment == "3HP", c(state.names) := .(1, 0.9996, 1, 1, 1, 1, 0.9996,
                                 1, 1, 0.75, 0.94, 1, 0.75, 0.94, 0.75,
                                 0.94, 0, 0, 0, 0)]
 
 utility.dt[treatment == "", c(state.names) := .(1, NA, NA, NA, NA, 1, NA, NA, NA,
                               NA, NA, NA, NA, NA, 0.75, 0.94, NA, NA, 0, 0)]
+
+
+
+
 
 
 
@@ -133,11 +138,11 @@ arglist <- CreateArgumentList(state.names, state.number)
 # updates a row. Note: unevaluated parameter must be wrapped in a quote()
 # arglist$update.row(9, c(0, 0, 0, 0, 0, 0, 0, 0, 0, quote(CMP), 0, 0, 0, 0, 0, 0, 0, 0, quote(param$TBMR), 0, 0, 0, quote(param$MR)))
 # arglist$update.list(listvalues) # For passing a entire list
-# arglist$update.cell(1, 1, 0) # update on cell
+# arglist$update.cell(7, 20, quote(param$MR+param$TREATSAE)) # update on cell
 
 
 # Show list with N x N state dimensions
-# arglist$show.list()
+# arglist$show.list()[2,20]
 
 # Add the state names as the final argument
 # arglist$add.state.name(state.names)
@@ -146,7 +151,7 @@ arglist <- CreateArgumentList(state.names, state.number)
 # arglist$drop.state.name()
 
 # Save the argument list. 
-# arglist$save.list("S1.TM")
+# arglist$save.list("BASELINE.S1.TM")
 
 # Load the argument list
 # S1.TM
@@ -211,6 +216,7 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
                                TESTC = Get.TEST(S = "cost.primary", testing),
                                TREATR = Get.TREAT(S = "rate", treatment),
                                TREATC = Get.TREAT(S = "cost.primary", treatment),
+                               TREATSAE = Get.TREAT(S ="sae", treatment),
                                POP = Get.POP(DT, strategy, markov.cycle),
                                UTILITY = Get.UTILITY(treatment),
                                TBCOST = 11408.84
@@ -222,8 +228,8 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 # Uses aust.vic.rds file to create a sample input
 pop.master <- CreatePopulationMaster()
 
-set.seed(10)
-pop.master <- pop.master[sample(.N, 2000)]
+#set.seed(10)
+#pop.master <- pop.master[sample(.N, 1000)]
 
 
 
@@ -238,7 +244,7 @@ markov.cycle <- 0 # Tracks the current cycle
 cycles <- 10 # Model run cycles
 
 #--------------------- S0_12 ---------------------------#
-#---------------Baseline for S1, S2 --------------------#
+#---------------Baseline for S2 --------------------#
 
 pop.output <- pop.master[YARP == year][, cycle := 0]
 pop.output <- RunModel(pop.output, strategy = S0_12, testing = "", treatment = "", start.year = 2020, cycles = 10, modelinflow = TRUE)
@@ -247,6 +253,8 @@ saveRDS(pop.output, "Data/Output/S0_12.rds")
 #--------------------- END OF S0_12 ---------------------------#
 
 
+#--------------------- S0_1 ---------------------------#
+#---------------Baseline for S1 --------------------#
 DoRunModel(S0_1, start.year, cycles)
 
 
@@ -268,8 +276,9 @@ DoRunModel(S2, start.year, cycles)
 discount <- 0.03
 start.year <- 2020
 markov.cycle <- 0 # Tracks the current cycle
-cycles <- 10 # Model run cycles
+cycles <- 30 # Model run cycles
 
+DoRunModel(S0_345, start.year, cycles)
 
 DoRunModel(S3, start.year, cycles)
 DoRunModel(S4, start.year, cycles)

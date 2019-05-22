@@ -179,7 +179,6 @@ Get.TREAT <- function(S, treat) {
 
 # Look up target population percentage
 Get.POP <- function(DT, strategy, markov.cycle) {
-    browser()
 
     if (strategy$myname == "S1" || strategy$myname == "S0_1") {
 
@@ -187,7 +186,7 @@ Get.POP <- function(DT, strategy, markov.cycle) {
 
     } else if (strategy$myname == "S2") {
 
-        ifelse(DT[, YARP] == 2020 + markov.cycle, .6, 0)
+        ifelse(DT[, YARP] == 2020 + markov.cycle, .684, 0)
 
     } else if (strategy$myname == "S0_12" || strategy$myname == "S0_345") {
 
@@ -198,14 +197,15 @@ Get.POP <- function(DT, strategy, markov.cycle) {
 
         # leaves S3, S4 & S5
         ifelse(DT$YARP < 2020,
-           switch(strategy$myname,
-                  S3 = 0.05,
-                  S4 = 0.10,
-                  S5 = 0.15,
-                  stop("Error in Pop")
-                  ),
-                  stop("Error in Pop DT YARP")
-                  )
+            switch(strategy$myname,
+                S3 = 0.05,
+                S4 = 0.10,
+                S5 = 0.15,
+                stop("Error in Pop")
+            ),
+            stop("Error in Pop DT YARP")
+        )
+
     }
 
 }
@@ -266,7 +266,7 @@ CalculateCMP <- function(tM, l, z) {
 
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
 PerformMatrixMultiplication <- function(dM, tM, l, z, markov.cycle, flow.cost, state.cost, utility) {
-    browser()
+
     # Make the current data matrix a list
     bar <- unlist(dM)
 
@@ -336,6 +336,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     parameters$TESTC$env <- environment()
     parameters$TREATR$env <- environment()
     parameters$TREATC$env <- environment()
+    parameters$TREATSAE$env <- environment()
     parameters$POP$env <- environment()
     parameters$UTILITY$env <- environment()
     parameters$TBCOST$env <- environment()
@@ -366,7 +367,7 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
     param$RR[is.na(param$RR)] <- 0.0013
     param$TBMR[is.na(param$TBMR)] <- 0.01
 
-      
+
     # assign the current environment for evaluation. 
     for (i in 1:length(transMatrix)) {
 
@@ -499,7 +500,7 @@ DoRunModel <- function(strategy, start.year, cycles) {
 
         listoftests <- c("QTFGIT")
         listoftreatments <- c("4R")
-        
+
     }
 
 
@@ -514,32 +515,37 @@ DoRunModel <- function(strategy, start.year, cycles) {
                 || strategy$myname == "S0_12" || strategy$myname == "S0_1") {
 
                     if (strategy$myname == "S2" || strategy$myname == "S0_12") {
+
                         pop.output <- pop.master[YARP == year][, cycle := 0]
 
                     } else if (strategy$myname == "S1" || strategy$myname == "S0_1") {
 
 
                         pop.output <- pop.master[YARP >= year][, cycle := 0]
+
+                        # Run it for 1 cycle to move the cohort from p.sus and p.ltbi to post test/treatment states.
                         pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles = 1, modelinflow = FALSE)
+
+                        # reset the output to align them with the other strategies.
                         pop.output <- pop.output[cycle == 1]
                         pop.output[, cycle := 0]
                         pop.output[, AGEP := AGEP - 1]
 
+                        # Zero the flows and testing costs
                         colname <- colnames(pop.output[, V.p.sus:V.p.death])
                         colname <- c(colname, colnames(pop.output[, FC.p.sus:FC.p.death]))
-
                         pop.output[, c(colname) := as.numeric(NA),]
 
+                        # Creates a adjusted pop.master for S1.
                         assign("pop.master", pop.output, pos = 1,)
                         pop.output <- pop.master[YARP == year][, cycle := 0]
 
 
                     } else {
 
-                        pop.output <- pop.master[YARP <= year][, cycle := 0]
+                        stop("error in do strategy")
 
                     }
-
 
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, ".rds", sep = ""))
@@ -552,48 +558,47 @@ DoRunModel <- function(strategy, start.year, cycles) {
 
                     }
 
-                } else {
+                } else if (strategy$myname == "S0_345" || strategy$myname == "S3" || strategy$myname == "S4"
+                || strategy$myname == "S5") {
 
 
-                    pop.output <- pop.master[YARP <= year][, cycle := 0][1:50000]
+                    pop.output <- pop.master[YARP < year][, cycle := 0][1:50000]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, "Data/Output/pop.output1.rds")
 
 
-                    pop.output <- pop.master[YARP <= year][, cycle := 0][50001:100000]
+                    pop.output <- pop.master[YARP < year][, cycle := 0][50001:100000]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, "Data/Output/pop.output2.rds")
 
 
 
-                    pop.output <- pop.master[YARP <= year][, cycle := 0][100001:150000]
+                    pop.output <- pop.master[YARP < year][, cycle := 0][100001:150000]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, "Data/Output/pop.output3.rds")
 
 
 
-                    pop.output <- pop.master[YARP <= year][, cycle := 0][150001:200000]
+                    pop.output <- pop.master[YARP < year][, cycle := 0][150001:200000]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, "Data/Output/pop.output4.rds")
 
 
-                    pop.output <- pop.master[YARP <= year][, cycle := 0][200001:250000]
+                    pop.output <- pop.master[YARP < year][, cycle := 0][200001:250000]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, "Data/Output/pop.output5.rds")
 
 
 
-                    pop.output <- pop.master[YARP <= year][, cycle := 0][250001:300000]
+                    pop.output <- pop.master[YARP < year][, cycle := 0][250001:300000]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, "Data/Output/pop.output6.rds")
 
-
-
-                    pop.output <- pop.master[YARP <= year][, cycle := 0][300001:nrow(pop.master)]
+                    lastrow <- nrow(pop.master[YARP < year])
+                                                         
+                    pop.output <- pop.master[YARP < year][, cycle := 0][300001:lastrow]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     saveRDS(pop.output, "Data/Output/pop.output7.rds")
-
-
 
                     pop.output1 <- readRDS("Data/Output/pop.output1.rds")
                     pop.output2 <- readRDS("Data/Output/pop.output2.rds")
@@ -607,6 +612,9 @@ DoRunModel <- function(strategy, start.year, cycles) {
                     pop.output <- rbind(pop.output1, pop.output2, pop.output3, pop.output4, pop.output5, pop.output6, pop.output7)
                     saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, ".rds", sep = ""))
 
+                } else {
+
+                    stop("Another error in do strategy")
                 }
 
             }
