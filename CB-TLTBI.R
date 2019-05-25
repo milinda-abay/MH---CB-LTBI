@@ -224,9 +224,9 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 # Uses aust.vic.rds file to create a sample input
 pop.master <- CreatePopulationMaster()
 
-set.seed(10)
-pop.master <- pop.master[sample(.N, 200)]
-
+# set.seed(10)
+# pop.master <- pop.master[sample(.N, 200)]
+# 
 
 
 
