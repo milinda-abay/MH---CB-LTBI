@@ -233,38 +233,38 @@ pop.master <- CreatePopulationMaster()
 #---------- Model parameters for STRATEGY 0 ----------------#
 
 # TODO - Need a new CreatePopulationMaster function to manage LGA column.
-discount <- 0.03
-start.year <- 2020
-year <- start.year # Initialise year with start.year
-markov.cycle <- 0 # Tracks the current cycle
-cycles <- 30 # Model run cycles
-
-#--------------------- S0_12 ---------------------------#
-#---------------Baseline for S2 --------------------#
-
-pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S0_12, testing = "", treatment = "", start.year = 2020, cycles = 10, modelinflow = TRUE)
-saveRDS(pop.output, "Data/Output/S0_12.rds")
-
-#--------------------- END OF S0_12 ---------------------------#
-
-
-#--------------------- S0_1 ---------------------------#
-#---------------Baseline for S1 --------------------#
-DoRunModel(S0_1, start.year, cycles)
-
-
-
-#-------- Model parameters for S1 & S2 --------#
-
-discount <- 0.03
-start.year <- 2020
-year <- start.year # Initialise year with start.year
-markov.cycle <- 0 # Tracks the current cycle
-cycles <- 30 # Model run cycles
-
-DoRunModel(S1, start.year, cycles)
-DoRunModel(S2, start.year, cycles)
+  discount <- 0.03
+  start.year <- 2020
+  year <- start.year # Initialise year with start.year
+  markov.cycle <- 0 # Tracks the current cycle
+  cycles <- 30 # Model run cycles
+  
+  #--------------------- S0_12 ---------------------------#
+  #---------------Baseline for S2 --------------------#
+  
+  pop.output <- pop.master[YARP == year][, cycle := 0]
+  pop.output <- RunModel(pop.output, strategy = S0_12, testing = "", treatment = "", start.year = 2020, cycles, modelinflow = TRUE)
+  saveRDS(pop.output, "Data/Output/S0_12.rds")
+  
+  #--------------------- END OF S0_12 ---------------------------#
+  
+  
+  #--------------------- S0_1 ---------------------------#
+  #---------------Baseline for S1 --------------------#
+  DoRunModel(S0_1, start.year, cycles)
+  
+  
+  
+  #-------- Model parameters for S1 & S2 --------#
+  
+  discount <- 0.03
+  start.year <- 2020
+  year <- start.year # Initialise year with start.year
+  markov.cycle <- 0 # Tracks the current cycle
+  cycles <- 30 # Model run cycles
+  
+  DoRunModel(S1, start.year, cycles)
+  DoRunModel(S2, start.year, cycles)
 
 
 #---------- Model parameters for S3 , S4 & S5----------------#
