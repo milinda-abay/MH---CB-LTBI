@@ -529,3 +529,40 @@ RateToProb <- function(r, to = 1, per = 1) {
     1 - exp(-r * to)
 }
 
+LoadRDStoSQL <- function(path) {
+
+    wd <- getwd()
+    setwd(path)
+
+    listoffiles <- list.files(path, ".rds")
+
+    loadeachfile <- function(fn) {
+
+        rds <- readRDS(fn)
+        rxDataStep(inData = rds, outFile = sql.pop.table, append = "rows")
+
+    }
+
+    lapply(listoffiles, loadeachfile)
+
+    setwd(wd)
+
+}
+
+path <- "D:/Data/Output/New Model Run"
+
+LoadRDStoSQL("D:/Data/Output/New Model Run")
+
+
+rxDataStep(inData = rds, outFile = sql.pop.table, overwrite = TRUE)
+
+
+
+wd <- getwd()
+setwd(path)
+rds <- readRDS("S4.QTFGIT.4R.pop.output4.rds")
+
+
+rds[, c("Strategy", "Test", "Treatment") := .("S0_12", "", "")]
+
+saveRDS(rds, "S0_12.rds")

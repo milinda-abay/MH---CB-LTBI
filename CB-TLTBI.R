@@ -12,8 +12,10 @@
 #library(diagram)
 #library(heemod)
 
+library(RevoScaleR)
 library(lazyeval) # required
 library(data.table) # required
+
 
 
 # Model setup located within this file.
@@ -71,7 +73,8 @@ treatment.dt <- data.table(treatment = c("4R", "9H", "3HP", "6H"),
                            rate = c(.83, .78, .82, .63),
                            cost.primary = c(437.13, 578.87, 440.34, 436.42),
                            cost.tertiary = c(632.38, 969.37, 596.54, 709.77),
-                           sae = c(0, 0.00000025, 0.00000016, 0.0000002))
+                           sae = c(0.000000009, 0.00000025, 0.00000016, 0.0000002))
+
 
 #9H cost changed from 549.22 to 578.87 and 939.72 to 969.37 respectively. 
 
@@ -101,12 +104,6 @@ utility.dt[treatment == "3HP", c(state.names) := .(1, 0.9996, 1, 1, 1, 1, 0.9996
 
 utility.dt[treatment == "", c(state.names) := .(1, NA, NA, NA, NA, 1, NA, NA, NA,
                               NA, NA, NA, NA, NA, 0.75, 0.94, NA, NA, 0, 0)]
-
-
-
-
-
-
 
 
 
@@ -224,12 +221,11 @@ parameters <- DefineParameters(MR = Get.MR(DT, year, rate.assumption = "High"),
 
 
 
-
 # Uses aust.vic.rds file to create a sample input
 pop.master <- CreatePopulationMaster()
 
 #set.seed(10)
-#pop.master <- pop.master[sample(.N, 1000)]
+#pop.master <- pop.master[sample(.N, 200)]
 
 
 
@@ -241,22 +237,18 @@ discount <- 0.03
 start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
-cycles <- 10 # Model run cycles
-
-#--------------------- S0_12 ---------------------------#
-#---------------Baseline for S2 --------------------#
-
-pop.output <- pop.master[YARP == year][, cycle := 0]
-pop.output <- RunModel(pop.output, strategy = S0_12, testing = "", treatment = "", start.year = 2020, cycles = 10, modelinflow = TRUE)
-saveRDS(pop.output, "Data/Output/S0_12.rds")
-
-#--------------------- END OF S0_12 ---------------------------#
-
+cycles <- 30 # Model run cycles
 
 #--------------------- S0_1 ---------------------------#
 #---------------Baseline for S1 --------------------#
 DoRunModel(S0_1, start.year, cycles)
 
+
+#--------------------- S0_12 ---------------------------#
+#---------------Baseline for S2 --------------------#
+DoRunModel(S0_12, start.year, cycles)
+
+#--------------------- END OF S0_12 ---------------------------#
 
 
 #-------- Model parameters for S1 & S2 --------#
@@ -265,7 +257,7 @@ discount <- 0.03
 start.year <- 2020
 year <- start.year # Initialise year with start.year
 markov.cycle <- 0 # Tracks the current cycle
-cycles <- 10 # Model run cycles
+cycles <- 30 # Model run cycles
 
 DoRunModel(S1, start.year, cycles)
 DoRunModel(S2, start.year, cycles)
