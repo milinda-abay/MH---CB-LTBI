@@ -1,7 +1,6 @@
 # The set of Define* functions implement lazy evaluation and create respective objects.
 # Ultimately a singular model object will have multiple strategies with multiple transition matrices and states.
 
-
 DefineTransition <- function(..., state.names) {
     # Define an unevaluated transmission matrix, for use in model running later
 
@@ -25,14 +24,12 @@ DefineTransition <- function(..., state.names) {
               state.names = as.vector(state.names))
 }
 
-
 DefineParameters <- function(...) {
     # Define an unevaluated parameters list, for use in model running later
 
     unevaluated.parameter.list <- lazyeval::lazy_dots(...)
     structure(unevaluated.parameter.list, class = c("uneval_parameters", class(unevaluated.parameter.list)))
 }
-
 
 DefineStates <- function(...) {
     # Defines state values
@@ -41,7 +38,6 @@ DefineStates <- function(...) {
     structure(state.values, class = c("state", class(state.values)))
 
 }
-
 
 DefineStrategy <- function(..., transition.matrix) {
     # TODO - find a way to pass the state.names vector and create the state objects
@@ -55,7 +51,6 @@ DefineStrategy <- function(..., transition.matrix) {
               class = "uneval_model")
 
 }
-
 
 CheckComplement <- function(transition.matrix, dimension) {
     # Used by DefineTransition to verify only one CMP (complement) parameter per row in the transition matrix
@@ -74,7 +69,6 @@ CheckComplement <- function(transition.matrix, dimension) {
         stop("Only a maximum of one 'CMP' is allowed per matrix row.")
     }
 }
-
 
 # The following functions perform various calculations at model runtime.
 #------------------------------------------------------------------------#
@@ -215,21 +209,17 @@ Get.POP <- function(DT, strategy, markov.cycle) {
 
 }
 
-
 Get.UTILITY <- function(t) {
 
     as.numeric(utility.dt[treatment == t][, 2:21])
 
 }
 
-
 Get.DISCOUNT <- function() {
 
     .03
 
 }
-
-
 
 # Calculates the CMP value after evaluation of the promise objects in parameter and transition matrix.
 CalculateCMP <- function(tM, l, z) {
@@ -418,9 +408,6 @@ GetStateCounts <- function(DT, year, strategy, testing, treatment, markov.cycle)
 
 }
 
-
-
-
 #------------------------------------------------------------------------#
 
 # The main model runtime loop 
@@ -484,7 +471,6 @@ RunModel <- function(pop.output, strategy, testing, treatment, start.year, cycle
 
     pop.output
 }
-
 
 # convenience function to loop over all the testing, treatment and sampling model runs
 DoRunModel <- function(strategy, start.year, cycles) {
@@ -602,7 +588,9 @@ DoRunModel <- function(strategy, start.year, cycles) {
                     saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output2.rds", sep = ""))
 
 
-                    pop.output <- pop.master[YARP < year][, cycle := 0][100001:150000]
+                    lastrow <- nrow(pop.master[YARP < year])
+
+                    pop.output <- pop.master[YARP < year][, cycle := 0][100001:lastrow]
                     pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
                     pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
                     #rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
@@ -610,34 +598,34 @@ DoRunModel <- function(strategy, start.year, cycles) {
 
 
 
-                    pop.output <- pop.master[YARP < year][, cycle := 0][150001:200000]
-                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
-                    pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
-                    #rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
-                    saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output4.rds", sep = ""))
+                    #pop.output <- pop.master[YARP < year][, cycle := 0][150001:200000]
+                    #pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    #pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
+                    ##rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
+                    #saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output4.rds", sep = ""))
 
 
-                    pop.output <- pop.master[YARP < year][, cycle := 0][200001:250000]
-                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
-                    pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
-                    #rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
-                    saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output5.rds", sep = ""))
+                    #pop.output <- pop.master[YARP < year][, cycle := 0][200001:250000]
+                    #pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    #pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
+                    ##rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
+                    #saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output5.rds", sep = ""))
 
 
 
-                    pop.output <- pop.master[YARP < year][, cycle := 0][250001:300000]
-                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
-                    pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
-                    #rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
-                    saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output6.rds", sep = ""))
+                    #pop.output <- pop.master[YARP < year][, cycle := 0][250001:300000]
+                    #pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    #pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
+                    ##rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
+                    #saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output6.rds", sep = ""))
 
-                    lastrow <- nrow(pop.master[YARP < year])
+       
                                                          
-                    pop.output <- pop.master[YARP < year][, cycle := 0][300001:lastrow]
-                    pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
-                    pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
-                    #rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
-                    saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output7.rds", sep = ""))
+                    #pop.output <- pop.master[YARP < year][, cycle := 0][300001:lastrow]
+                    #pop.output <- RunModel(pop.output, strategy, test, treatment, start.year, cycles, modelinflow)
+                    #pop.output[, c("Strategy", "Test", "Treatment") := .(strategy$myname, test, treatment)]
+                    ##rxDataStep(inData = pop.output, outFile = sql.pop.table, append = "rows")
+                    #saveRDS(pop.output, paste("Data/Output/", strategy$myname, ".", test, ".", treatment, "pop.output7.rds", sep = ""))
                     
                     #pop.output1 <- readRDS("Data/Output/pop.output1.rds")
                     #pop.output2 <- readRDS("Data/Output/pop.output2.rds")
@@ -671,21 +659,21 @@ DoRunModel <- function(strategy, start.year, cycles) {
 }
 
 
-# SQL Server and RevoScaleR.  
-connStr <- "Driver=SQL Server;Server=MU00111629;Database=VICWINTER;Trusted_Connection=True"
-sqlShareDir <- paste("C:\\Users\\maba0001\\Documents\\sqlShareDir", sep = " ")
-sqlWait <- TRUE
-sqlConsoleOutput <- FALSE
-sqlcc <- RxInSqlServer(connectionString = connStr, shareDir = sqlShareDir, wait = sqlWait, consoleOutput = sqlConsoleOutput)
-#rxSetComputeContext(sqlcc)
-rxSetComputeContext("local")
+## SQL Server and RevoScaleR.  
+#connStr <- "Driver=SQL Server;Server=MU00111629;Database=VICWINTER;Trusted_Connection=True"
+#sqlShareDir <- paste("C:\\Users\\maba0001\\Documents\\sqlShareDir", sep = " ")
+#sqlWait <- TRUE
+#sqlConsoleOutput <- FALSE
+#sqlcc <- RxInSqlServer(connectionString = connStr, shareDir = sqlShareDir, wait = sqlWait, consoleOutput = sqlConsoleOutput)
+##rxSetComputeContext(sqlcc)
+#rxSetComputeContext("local")
 
-sqlRowsPerRead <- 5000
-sql.table.name <- "popcalculatedtest"
+#sqlRowsPerRead <- 5000
+#sql.table.name <- "popcalculatedtest"
 
 
-sql.pop.table <- RxSqlServerData(connectionString = connStr,
-   table = sql.table.name,
-   rowsPerRead = sqlRowsPerRead)
+#sql.pop.table <- RxSqlServerData(connectionString = connStr,
+   #table = sql.table.name,
+   #rowsPerRead = sqlRowsPerRead)
 
 
