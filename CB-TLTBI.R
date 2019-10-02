@@ -1,6 +1,7 @@
 # Coding style
 # https://google.github.io/styleguide/Rguide.xml
 
+# test comments
 
 # Load libraries. (not needed if using the *.rds data files objects)
 #library(tidyverse)
