@@ -10,7 +10,7 @@ state_names <- c("p.sus", "p.sus.fp.t", "p.sus.fp.nt", "p.sus.fp.tc", "p.sus.tn"
                  "p.ltbi.tbr", "p.ltbi.tp.nt.tb.death", "p.ltbi.fn.tb.death", "p.ltbi.tb.death", "p.death")
 
 # Dummy values
-test <- c("TST15")
+test <- c("QTFGIT")
 treatment <- c("4R")
 start_year <- 2020
 cycles <- 10
@@ -56,6 +56,9 @@ parameters <- object_creator$define_parameters(mr = get_mr(DT, year, rate_assump
                                               tbcost = 11408.84
                                               )
 
+# create a uniform distribution matrix of LHS samples
+dsa <- object_creator$define_dsa(testsn, .7, .8, testsp, .95, .99, treatr, 0.8, 0.85, tbcost, 10000, 20000, sample = 3)
+
 
 # TODO - deparse the name of the arguments using (...) and create the property label. Test, treatment or xyz shouldn't
 # matter, e.g. s2_strategey$properties$...
@@ -63,24 +66,24 @@ s2_strategy <- object_creator$define_strategy(test = test,
                                               treatment = treatment,
                                               my_name = "S2",
                                               states = s2_state_list,
-                                              transition_matrix = s2_matrix)
+                                              transition_matrix = s2_matrix,
+                                              dsa = dsa)
 
 # TODO - define_initialisation is extremely bespoke. More thought must be given on how to make it
 # a generic method
 init <- object_creator$define_initialisation(s2_strategy, start_year)
 
-
 do_scenario <- function (list_of_tests, list_of_treatments) {
-
 
     do_test <- function(test) {
 
         do_treatment <- function(treatment) {
 
-            
-            scenario_env <- environment()
+            # copies the scenario environment in order to evaluate test & treatment
+            s2_strategy$properties$test$env <- environment()
+            s2_strategy$properties$treatment$env <- environment()
 
-            run_model(strategy = s2_strategy, init = init, cycles = cycles, scenario_env = scenario_env)
+            run_model(strategy = s2_strategy, init = init, cycles = cycles)
 
         }
 

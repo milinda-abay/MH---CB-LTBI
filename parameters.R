@@ -143,11 +143,8 @@ utility_dt[treatment == "3HP", c(state_names) := .(1, 0.9996, 1, 1, 1, 1, 0.9996
 utility_dt[treatment == "", c(state_names) := .(1, NA, NA, NA, NA, 1, NA, NA, NA,
                             NA, NA, NA, NA, NA, 0.75, 0.94, NA, NA, 0, 0)]
 
-
-
 unevaluated_flow_cost <- lazy(c(1:20))
 unevaluated_state_cost <- lazy(c(1:20))
-
 
 # Creates a master migrant population table
 create_population_master <- function(modify = FALSE) {

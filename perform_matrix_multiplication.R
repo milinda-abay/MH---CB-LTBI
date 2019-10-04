@@ -1,10 +1,11 @@
 # Performs matrix multiplication on each row (cohort) with the evaluated transition matrix for that row.
-perform_matrix_multiplication <- function(dM, tM, l, z, markov_cycle, flow_cost, state_cost, utility, current_rows) {
+perform_matrix_multiplication <- function(dM, tM, l, z, markov_cycle, flow_cost, state_cost, utility) {
 
 
 
     # using the HDF5 
-    bar <- unlist(dM[markov_cycle+1,1,])
+    bar <- unlist(dM[markov_cycle + 1, 1,])
+    output_ds <- dM
 
     dM <- data.table(seq(1:z))
 
@@ -48,10 +49,28 @@ perform_matrix_multiplication <- function(dM, tM, l, z, markov_cycle, flow_cost,
     utility <- discount * utility
 
     flow_cost <- flows[, Map("*", flow_cost, .SD)]
-    count.cost <- counts[, Map("*", state_cost, .SD)]
+    count_cost <- counts[, Map("*", state_cost, .SD)]
 
-    state.QALY <- counts[, Map("*", utility, .SD)]
+    state_QALY <- counts[, Map("*", utility, .SD)]
 
-    return(list(counts, flows, count.cost, flow_cost, state.QALY))
+
+    size <- nrow(output_ds[markov_cycle + 1, 1,])
+
+    #TODO - fix this with an apply()
+    names(counts) <- state_names
+    names(flows) <- state_names
+    names(count_cost) <- state_names
+    names(flow_cost) <- state_names
+    names(state_QALY) <- state_names
+
+
+    output_ds[markov_cycle + 2, 1, 1:size] <- counts
+    output_ds[markov_cycle + 2, 2, 1:size] <- flows
+    output_ds[markov_cycle + 2, 3, 1:size] <- count_cost
+    output_ds[markov_cycle + 2, 4, 1:size] <- flow_cost
+    output_ds[markov_cycle + 2, 5, 1:size] <- state_QALY
+
+
+    # return(list(counts, flows, count.cost, flow_cost, state.QALY))
 
 }

@@ -42,16 +42,16 @@ create_objects <- function(state_names) {
 
     }
 
-    define_strategy <- function(..., states, transition_matrix) {
+    define_strategy <- function(..., states, transition_matrix, dsa = NULL) {
         # TODO - find a way to pass the state_names vector and create the state objects
         # using create_states and define_state.
         # Have a list of named states per state_names
 
-        starategy_properties <- lazyeval::lazy_dots(...)
-               
-        structure(list(transition = transition_matrix, states = states, properties = starategy_properties,
-              state_number = length(states), outputs = define_outputs()),
-              class = "uneval_model")
+        strategy_properties <- lazyeval::lazy_dots(...)
+
+        structure(list(transition = transition_matrix, states = states, properties = strategy_properties,
+              state_number = length(states), dsa = dsa),
+              class = c("uneval_model", class(dsa)))
 
     }
 
@@ -69,13 +69,56 @@ create_objects <- function(state_names) {
     )
     }
 
-    define_outputs <- function() {
+
+    define_dsa <- function(..., sample = 1) {
+        # input should be of the form
+        # param, lower limit, upper limit
+
+        uneval_paramspace <- lazy_dots(...)
+
+        if (!length(uneval_paramspace) %% 3 == 0) {
+            stop("Incorrect number of elements")
+        }
+
+        number_of_parameters <- nrow(length(uneval_paramspace))
+
+        param_name <- character()
+        low <- lazyeval::lazy_dots()
+        high <- lazyeval::lazy_dots()
+
+        for (i in seq_along(uneval_paramspace)) {
+
+            if (i %% 3 == 1) {
+                param_name <- c(param_name, deparse(uneval_paramspace[[i]]$expr))
+            } else if (i %% 3 == 2) {
+                low <- c(low, list(uneval_paramspace[[i]]))
+            } else if (i %% 3 == 0) {
+                high <- c(high, list(uneval_paramspace[[i]]))
+            }
+        }
+
+        names(low) <- param_name
+        names(high) <- param_name
+
+        # hard-coding 4 samples of two parameters
+        param_sample <- randomLHS(sample, length(param_name))
+        dimnames(param_sample) <- list(NULL, param_name)
+
+        lapply(param_name, function(param_name) {
+
+            param_sample[, param_name] <<- qunif(param_sample[, param_name],
+                                        lazy_eval(low[[param_name]]), lazy_eval(high[[param_name]]))
+        })
 
 
-        list(index = data.table(), state_count = data.table()[, c(state_names) := 0], state_cost = data.table()[, c(state_names) := 0],
-         flow_count = data.table()[, c(state_names) := 0], flow_cost = data.table()[, c(state_names) := 0],
-         QALY = data.table()[, c(state_names) := 0])
-
+        structure(list(
+                  dsa = param_sample,
+                  parameters = param_name,
+                  low = low,
+                  high = high
+                  ),
+        class = "dsa"
+        )
 
     }
 
@@ -90,12 +133,20 @@ create_objects <- function(state_names) {
 
         }
 
-        state_list
+        structure(state_list, class = c(class(state_list), class(state_names)))
+
     }
 
-    create_argument_list <- function(input_list) {
+    create_argument_list <- function(input_list = NULL) {
 
         state_number <- length(state_names)
+
+        # If no values are give then create place holders
+        if (is.null(input_list)) {
+
+            input_list <- rep(list("NA"), state_number)
+
+        }
 
         # Create and initialise a list
         list_values <- unlist(lapply(input_list, function(x) { parse(text = x) }))
@@ -156,7 +207,6 @@ create_objects <- function(state_names) {
         }
         )
 
-
     }
 
     check_complement <- function(transition_matrix, dimension) {
@@ -212,6 +262,10 @@ create_objects <- function(state_names) {
 
     define_outputs = function(...) {
         define_outputs(...)
+    },
+
+    define_dsa = function(...) {
+        define_dsa(...)
     },
 
     # Creates a default set of states and values
@@ -271,35 +325,39 @@ define_dsa <- function(..., sample = 1) {
     low <- lazyeval::lazy_dots()
     high <- lazyeval::lazy_dots()
 
-    
     for (i in seq_along(uneval_paramspace)) {
 
-
         if (i %% 3 == 1) {
-
             param_name <- c(param_name, deparse(uneval_paramspace[[i]]$expr))
-
         } else if (i %% 3 == 2) {
-
             low <- c(low, list(uneval_paramspace[[i]]))
-            
         } else if (i %% 3 == 0) {
-
             high <- c(high, list(uneval_paramspace[[i]]))
-
         }
     }
 
     names(low) <- param_name
     names(high) <- param_name
 
-
-
     # hard-coding 4 samples of two parameters
-    param_sample <- randomLHS(4, length(param_name))
+    param_sample <- randomLHS(sample, length(param_name))
     dimnames(param_sample) <- list(NULL, param_name)
 
-    param_sample
+    lapply(param_name, function(param_name) {
+
+        param_sample[, param_name] <<- qunif(param_sample[, param_name],
+                                        lazy_eval(low[[param_name]]), lazy_eval(high[[param_name]]))
+    })
+
+
+    structure(
+              list(
+                   dsa = param_sample,
+                   parameters = param_name,
+                   low = low,
+                   high = high
+                   )
+                   )
 
 
 }
@@ -307,7 +365,6 @@ define_dsa <- function(..., sample = 1) {
 
 
 
-x <- define_dsa(x, 1, 2, y, 3, 4)
 
 
 #?set.seed
